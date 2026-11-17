@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="manifest" href="./manifest.webmanifest"/>
+<meta name="theme-color" content="#111827"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Field Evaluation"/>
+
 <title>Field Evaluation App v38.13 NOTES-NAV-ISOLATION TEST</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -8419,6 +8426,11 @@ function exportChevronExcel(mode='all', selectedColumns=null) {
   const htmlDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><table border="1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>${htmlRows}</table>
 
 
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+</script>
 </body></html>`;
   const suffix = mode === 'filtered' ? '_filtered' : '';
   dlFile('﻿' + htmlDoc, `chevron_eligibility${suffix}_${APP_VERSION_SLUG}_${stamp()}.xls`, 'application/vnd.ms-excel;charset=utf-8;');
