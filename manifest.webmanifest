@@ -1,0 +1,18 @@
+{
+  "name": "Field Evaluation App",
+  "short_name": "Field Eval",
+  "description": "Field Evaluation App",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f0f2f7",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
