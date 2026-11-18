@@ -3482,6 +3482,20 @@ function getFiltered() {
 /* ═══════════════════════════════════════════════════
    RENDER HISTORY
 ═══════════════════════════════════════════════════ */
+const PHYSICAL_EXERCISE_LABELS={pullups:'Pull Ups',pushups:'Push Ups',situps:'Sit Ups',run:'3200m Run'};
+function physicalExerciseNoteText(e){
+ return Object.entries(PHYSICAL_EXERCISE_LABELS).map(([k,label])=>{
+  const note=String(e.exerciseNotes?.[k]||'').trim();
+  const excluded=Boolean(e.exerciseExcluded?.[k]);
+  return note||excluded?label+': '+(excluded?'NOT DONE / EXCLUDED'+(note?' — ':''):'')+note:'';
+ }).filter(Boolean).join(' | ')||'—';
+}
+function physicalExerciseCell(e,field,mode){
+ const key={pull:'pullups',push:'pushups',sit:'situps',run:'run'}[field];
+ const note=String(e.exerciseNotes?.[key]||'').trim();
+ const value=esc(String(getExerciseDisplayValue(e,field,mode)));
+ return note?value+' <button type="button" class="note-btn has-note" style="padding:2px 5px;font-size:11px;" onclick="quickNote(\''+e.id+'\',\''+key+'\')" title="Exercise note: '+esc(PHYSICAL_EXERCISE_LABELS[key])+'">📝</button>':value;
+}
 function renderHistory() {
   renderHistoryHead();
   const {filtered,rankable,searchActive}=getFiltered();
@@ -3512,7 +3526,8 @@ function renderHistory() {
     if(isAdjustedRecord(e)&&e.completo) clsBadge=clsBadge.replace('</span>',' <span title="Adjusted assessment: excluded exercises, not comparable to full assessment">⚠ '+(4-Object.values(e.exerciseExcluded||{}).filter(Boolean).length)+'/4</span></span>');
     if(isAdjustedRecord(e)&&e.completo) clsBadge=clsBadge.replace('class="badge ', 'class="badge adjusted-classification ');
     const statusCls=e.estadoClasse==='complete'?'b-complete':e.estadoClasse==='progress'?'b-good':'b-pending';
-    const noteClass=(e.observations||Object.values(e.exerciseNotes||{}).some(Boolean))?(e.observations.startsWith('!')||e.observations.includes('[!]')?'important':'has-note'):'';
+    const hasPhysicalNotes=Boolean(String(e.observations||'').trim()||Object.values(e.exerciseNotes||{}).some(v=>String(v||'').trim()));
+    const noteClass=hasPhysicalNotes?(String(e.observations||'').startsWith('!')||String(e.observations||'').includes('[!]')?'important':'has-note'):'';
     return `<tr class="${isBest?'best-row':''}">
       <td class="rank-col">${rankNum}</td>
       <td style="color:var(--muted);font-size:12px;">${esc(formatDateDisplay(e.recordDate || fallbackDateFromTimestamp(e.dataISO || e.createdAt)))}</td>
@@ -3521,14 +3536,14 @@ function renderHistory() {
       <td>${esc(e.sex||'—')}</td>
       <td>${e.idade??'—'}</td>
       <td style="font-size:12px;color:var(--muted);">${esc(e.grupoIdade||'—')}</td>
-      <td>${esc(String(getExerciseDisplayValue(e,'pull',viewMode)))}</td>
-      <td>${esc(String(getExerciseDisplayValue(e,'push',viewMode)))}</td>
-      <td>${esc(String(getExerciseDisplayValue(e,'sit',viewMode)))}</td>
-      <td>${esc(String(getExerciseDisplayValue(e,'run',viewMode)))}</td>
+      <td>${physicalExerciseCell(e,'pull',viewMode)}</td>
+      <td>${physicalExerciseCell(e,'push',viewMode)}</td>
+      <td>${physicalExerciseCell(e,'sit',viewMode)}</td>
+      <td>${physicalExerciseCell(e,'run',viewMode)}</td>
       <td class="score-col">${e.total??'—'}</td>
       <td>${clsBadge}</td>
       <td><span class="badge ${statusCls}" style="font-size:10px;">${esc(e.estado||'Created')}</span></td>
-      <td><button class="note-btn ${noteClass}" onclick="quickNote('${e.id}')" title="${esc(e.observations||'Add note')}">${e.observations?'📝 ●':'📝'}<span style="font-size:10px;font-weight:700;">${e.observations?' NOTE':''}</span></button></td>
+      <td><button class="note-btn ${noteClass}" onclick="quickNote('${e.id}')" title="View general and exercise notes">${hasPhysicalNotes?'📝 ●':'📝'}<span style="font-size:10px;font-weight:700;">${hasPhysicalNotes?' NOTE':''}</span></button></td>
       <td><div class="row-acts">
         <button class="btn ghost xs" onclick="editEntry('${e.id}')">Edit</button>
         <button class="btn ghost xs" onclick="duplicateEntry('${e.id}')">Dup</button>
@@ -3666,14 +3681,14 @@ window.deleteEntry = function(id) {
   $('statusBox').textContent='Record deleted.';
 };
 /* Full-note viewer/editor. A saved note is visible in full before editing. */
-window.quickNote = function(id) {
+window.quickNote = function(id,selectedExercise=null) {
   const e=state.entries.find(x=>x.id===id); if(!e) return;
   let overlay=document.getElementById('physicalNoteOverlay');
   if(!overlay){
     overlay=document.createElement('div');
     overlay.id='physicalNoteOverlay';
     overlay.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.60);display:none;align-items:center;justify-content:center;padding:16px;';
-    overlay.innerHTML='<div role="dialog" aria-modal="true" aria-labelledby="physicalNoteTitle" style="background:var(--surface);color:var(--text);width:min(680px,100%);max-height:90vh;overflow:auto;border-radius:14px;padding:20px;box-shadow:0 12px 45px rgba(0,0,0,.3);"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;"><h3 id="physicalNoteTitle" style="margin:0;">Record Notes</h3><button type="button" class="btn ghost sm" id="physicalNoteClose">Close</button></div><div id="physicalNoteSoldier" style="font-weight:700;margin:12px 0;"></div><div style="font-size:12px;color:var(--muted);margin-bottom:5px;">Saved note — full text</div><div id="physicalNoteView" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:30vh;overflow:auto;border:1px solid var(--border);background:var(--surface2);padding:12px;border-radius:9px;min-height:50px;"></div><label for="physicalNoteEdit" style="display:block;font-size:12px;color:var(--muted);margin:14px 0 5px;">Edit note</label><textarea id="physicalNoteEdit" rows="6" style="box-sizing:border-box;width:100%;min-height:140px;resize:vertical;padding:12px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit;"></textarea><div style="display:flex;justify-content:flex-end;gap:9px;margin-top:14px;"><button type="button" class="btn ghost sm" id="physicalNoteCancel">Cancel</button><button type="button" class="btn primary sm" id="physicalNoteSave">Save Note</button></div></div>';
+    overlay.innerHTML='<div role="dialog" aria-modal="true" aria-labelledby="physicalNoteTitle" style="background:var(--surface);color:var(--text);width:min(680px,100%);max-height:90vh;overflow:auto;border-radius:14px;padding:20px;box-shadow:0 12px 45px rgba(0,0,0,.3);"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;"><h3 id="physicalNoteTitle" style="margin:0;">Record Notes</h3><button type="button" class="btn ghost sm" id="physicalNoteClose">Close</button></div><div id="physicalNoteSoldier" style="font-weight:700;margin:12px 0;"></div><div style="font-size:12px;color:var(--muted);margin-bottom:5px;">Saved note — full text</div><div id="physicalNoteView" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:30vh;overflow:auto;border:1px solid var(--border);background:var(--surface2);padding:12px;border-radius:9px;min-height:50px;"></div><label for="physicalNoteEdit" style="display:block;font-size:12px;color:var(--muted);margin:14px 0 5px;">Edit general note</label><textarea id="physicalNoteEdit" rows="6" style="box-sizing:border-box;width:100%;min-height:140px;resize:vertical;padding:12px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit;"></textarea><div id="physicalExerciseNotesPanel" style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;"><strong>Exercise Notes</strong><p style="font-size:12px;color:var(--muted);margin:5px 0 10px;">Select an exercise to view or edit its note.</p><div id="physicalExerciseNoteTabs" style="display:flex;gap:6px;flex-wrap:wrap;"></div><label for="physicalExerciseNoteEdit" id="physicalExerciseNoteLabel" style="display:block;margin:12px 0 5px;font-size:12px;">Pull Ups</label><textarea id="physicalExerciseNoteEdit" rows="4" style="box-sizing:border-box;width:100%;min-height:90px;resize:vertical;padding:10px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font:inherit;"></textarea></div><div style="display:flex;justify-content:flex-end;gap:9px;margin-top:14px;"><button type="button" class="btn ghost sm" id="physicalNoteCancel">Cancel</button><button type="button" class="btn primary sm" id="physicalNoteSave">Save Note</button></div></div>';
     document.body.appendChild(overlay);
     const close=()=>{overlay.style.display='none';overlay.dataset.recordId='';};
     overlay.querySelector('#physicalNoteClose').addEventListener('click',close);
@@ -3683,6 +3698,8 @@ window.quickNote = function(id) {
       const target=state.entries.find(x=>String(x.id)===overlay.dataset.recordId);
       if(!target){close();return;}
       target.observations=overlay.querySelector('#physicalNoteEdit').value.trim();
+      const exerciseKey=overlay.dataset.exerciseKey||'pullups';
+      target.exerciseNotes={...(target.exerciseNotes||{}),[exerciseKey]:overlay.querySelector('#physicalExerciseNoteEdit').value.trim()};
       if(state.editingId===target.id){state.draftObservation=target.observations;updateQuickNotePreview();}
       saveEntries();
       try{refreshPhysicalWorkflowViews();}catch(err){console.error('Note refresh failed',err);renderHistory();}
@@ -3692,6 +3709,21 @@ window.quickNote = function(id) {
     overlay.addEventListener('keydown',ev=>{if(ev.key==='Escape')close();});
   }
   overlay.dataset.recordId=String(e.id);
+  const tabs=overlay.querySelector('#physicalExerciseNoteTabs');
+  const draftNotes={...(e.exerciseNotes||{})};
+  const exerciseEditor=overlay.querySelector('#physicalExerciseNoteEdit');
+  const switchExercise=key=>{
+    const previous=overlay.dataset.exerciseKey;
+    if(previous&&Object.prototype.hasOwnProperty.call(PHYSICAL_EXERCISE_LABELS,previous))draftNotes[previous]=exerciseEditor.value;
+    overlay.dataset.exerciseKey=key;
+    exerciseEditor.value=draftNotes[key]||'';
+    overlay.querySelector('#physicalExerciseNoteLabel').textContent=PHYSICAL_EXERCISE_LABELS[key]+(e.exerciseExcluded?.[key]?' — Not Done / Excluded':'');
+    tabs.querySelectorAll('button').forEach(btn=>{btn.style.fontWeight=btn.dataset.key===key?'800':'400';btn.style.borderColor=btn.dataset.key===key?'var(--accent)':'var(--border)';});
+  };
+  tabs.innerHTML=Object.entries(PHYSICAL_EXERCISE_LABELS).map(([key,label])=>'<button type="button" class="btn ghost sm" data-key="'+key+'">'+label+(String(draftNotes[key]||'').trim()?' ●':'')+'</button>').join('');
+  tabs.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>switchExercise(btn.dataset.key)));
+  overlay.dataset.exerciseKey='';
+  switchExercise(selectedExercise&&PHYSICAL_EXERCISE_LABELS[selectedExercise]?selectedExercise:'pullups');
   overlay.querySelector('#physicalNoteSoldier').textContent=e.nome||e.callsign||'Soldier';
   overlay.querySelector('#physicalNoteView').textContent=e.observations||'No notes yet.';
   overlay.querySelector('#physicalNoteEdit').value=e.observations||'';
