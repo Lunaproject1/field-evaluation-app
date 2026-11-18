@@ -3070,6 +3070,12 @@ function normalizeRecord(e) {
   next.dateOfBirth = normalizeDateInput(next.dateOfBirth || next.dob || '');
   next.weightKg = optionalMeasurement(next.weightKg,1,500);
   next.heightCm = optionalMeasurement(next.heightCm,50,250);
+  if(next.exerciseExcluded && Object.values(next.exerciseExcluded).some(Boolean)){
+    const progress=getCompletionState(next,Boolean(next.manualIncomplete));
+    next.estado=progress.text;
+    next.estadoClasse=progress.cls;
+    next.completo=progress.cls==='complete';
+  }
   return next;
 }
 
