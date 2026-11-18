@@ -3160,8 +3160,8 @@ function calculateRunScore(timeText, ageGroup) {
 }
 function classify(total, complete=true, manualIncomplete=false, role='combat', points=null, excluded=false) {
   if(manualIncomplete) return 'Incomplete';
-  if(!complete||!Number.isFinite(total)) return 'Pending';
   if(excluded) return 'NOT ASSESSED';
+  if(!complete||!Number.isFinite(total)) return 'Pending';
   if(role==='non-combat') return total>=280&&Array.isArray(points)&&points.length===4&&points.every(p=>Number.isFinite(p)&&p>=50)?'PASS':'NOT PASS';
   if(total>=381) return 'Excellent';
   if(total>=361) return 'Good';
@@ -3961,7 +3961,7 @@ function importJSON(ev) {
         const itemNorm = normalizePhysicalLinkValue(item.callsignNorm || item.callsign || item.nome || item.name || '');
         const itemCompact = normalizePhysicalLinkCompact(item.callsignCompact || item.callsignNorm || item.callsign || item.nome || item.name || '');
         const idx = merged.findIndex(r=>{
-          if(String(r.id||'') && String(item.id||'') && String(r.id)===String(item.id)) return true;
+          if(String(r.id||'') && String(item.id||'') && String(r.id)===String(item.id)) return sameAssessment(r,item)||(!r.sessao&&!item.sessao);
           if(!sameAssessment(r,item)) return false;
           const rowNorm = normalizePhysicalLinkValue(r.callsignNorm || r.callsign || r.nome || r.name || '');
           const rowCompact = normalizePhysicalLinkCompact(r.callsignCompact || r.callsignNorm || r.callsign || r.nome || r.name || '');
