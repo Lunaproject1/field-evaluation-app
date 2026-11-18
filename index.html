@@ -3885,7 +3885,7 @@ function exportTableImage() {
     cols.forEach(c=>{ const t=String(vals[c.k]); const maxW=c.w-10; let out=t; while(out.length>1&&ctx.measureText(out+'…').width>maxW) out=out.slice(0,-1); if(out!==t) out+='…'; ctx.fillStyle='#111827'; ctx.fillText(out,cx+6,y+20); ctx.strokeStyle='#e5e7eb'; ctx.lineWidth=1; ctx.strokeRect(cx,y,c.w,rh); cx+=c.w; });
     y+=rh;
   });
-  ctx.fillStyle='#9ca3af'; ctx.font='11px Arial'; ctx.fillText('Field Evaluation App · ${APP_VERSION}',pad,height-pad);
+  ctx.fillStyle='#9ca3af'; ctx.font='11px Arial'; ctx.fillText('Field Evaluation App · '+APP_VERSION,pad,height-pad);
   canvas.toBlob(blob=>{ if(!blob){alert('Error generating image.');return;} const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`results_${APP_VERSION_SLUG}_${stamp()}.png`; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000); $('statusBox').textContent='Table exported as image.'; },'image/png');
 }
 
