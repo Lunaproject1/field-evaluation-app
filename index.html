@@ -4035,7 +4035,7 @@ function physicalReportLine(e,i) {
  const value=v=>v===null||v===undefined||v===''?'—':String(v);
  const exercises=[['Pull-ups','pullups','pullPoints'],['Push-ups','pushups','pushPoints'],['Sit-ups','situps','sitPoints'],['Run','runTime','runPoints']];
  const scores=exercises.map(([label,raw,points])=>{
-  const excluded=Boolean(e.exerciseExcluded?.[raw]||e.exerciseExcluded?.[raw.replace('ups','')]);
+  const excluded=Boolean(e.exerciseExcluded?.[raw==='runTime'?'run':raw]);
   return label+': '+(excluded?'Excluded':value(e[points])+' pts');
  });
  const details=[];
@@ -4048,7 +4048,7 @@ function physicalReportLine(e,i) {
   '   Session: '+value(e.sessao)+' | Date: '+value(e.recordDate||e.dataLocal)+' | Total: '+value(e.total)+' pts | '+status,
   '   '+scores.join(' | '),
   ...(note?['   General note: '+note]:[]),
-  ...(exerciseNote?['   Exercise notes / exclusions: '+exerciseNote]:[])
+  ...(exerciseNote&&exerciseNote!=='—'?['   Exercise notes / exclusions: '+exerciseNote]:[])
  ].join('\n');
 }
 function buildReport() {
