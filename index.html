@@ -44,6 +44,9 @@
   --topbar-h: 58px;
 }
 
+/* Individual Progress has its own view, opened only from the Physical sidebar. */
+#physicalModule.progress-only > :not(#sectionPhysicalProgress) { display:none !important; }
+
 /* DARK MODE */
 body.dark {
   --bg: #0f1117;
@@ -2834,6 +2837,7 @@ function getStorageValue(pk, lk) {
 
 /* Scroll */
 function scrollToId(id) {
+  if(id!=='sectionPhysicalProgress')closePhysicalProgress();
   const el = document.getElementById(id) || document.querySelector('[id="'+id+'"]');
   if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
 }
@@ -2965,11 +2969,13 @@ function openPhysicalProgress(){
   const panel=document.getElementById('sectionPhysicalProgress');
   if(!panel)return;
   panel.classList.remove('module-hidden');
+  document.getElementById('physicalModule')?.classList.add('progress-only');
   document.getElementById('navPhysicalProgress')?.classList.add('active');
-  if(typeof PhysicalModule!=='undefined')PhysicalModule.renderPhysicalProgress?.();
+
   requestAnimationFrame(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}));
 }
 function closePhysicalProgress(){
+  document.getElementById('physicalModule')?.classList.remove('progress-only');
   document.getElementById('sectionPhysicalProgress')?.classList.add('module-hidden');
   document.getElementById('navPhysicalProgress')?.classList.remove('active');
 }
