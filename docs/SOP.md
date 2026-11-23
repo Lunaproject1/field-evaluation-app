@@ -1,4 +1,4 @@
-# FIELD EVALUATION APP — SOP OFICIAL v2.1
+# FIELD EVALUATION APP — SOP OFICIAL v2.2
 **Atualizado em 23-11-2026 para integração obrigatória no ecossistema LUNA.** Substitui os procedimentos antigos eliminados pelo proprietário. Governa o processo de desenvolvimento; não certifica retroativamente versões da aplicação.
 
 ## 1. Governação e fontes
@@ -22,7 +22,7 @@
 ## 2. Regras permanentes
 1. Nunca reconstruir a app de raiz sem pedido explícito; partir sempre do código existente no GitHub.
 2. Preservar os módulos Physical e Shooting, as regras de avaliação, registos, exportações, relatórios, sync e histórico. Mudanças fora do âmbito aprovado exigem autorização.
-3. **Não publicar, fazer merge ou atualizar a app instalada sem autorização explícita do utilizador para essa entrega.** Desenvolvimento pode ocorrer em branch isolada com PR, sem alterar `main`.
+3. **Autorização permanente de publicação para alterações solicitadas:** o proprietário autorizou em 23-11-2026 que as atualizações funcionais que pedir sejam publicadas para teste após validação técnica proporcional, com registo de lacunas SAFE. Não entregar apenas ZIP/PR quando a intenção é testar a app. **Exceções:** alterações destrutivas, migrações arriscadas, exposição de dados pessoais/médicos, alterações de segurança, mudanças não solicitadas ou releases com falhas críticas requerem nova autorização específica. A autorização de teste não equivale a certificação SAFE.
 4. Não usar dados pessoais/operacionais reais em issues, relatórios de teste ou commits. Usar dados sintéticos.
 5. Não apagar dados históricos para recalcular estatísticas. Migrações devem ser retrocompatíveis e testadas; preservar IDs, datas e snapshots.
 6. Manter a interface de utilização e documentação técnica separadas; não introduzir previews nem alterar a apresentação da app fora do pedido.
@@ -33,7 +33,7 @@
 3. **Especificação:** criar/atualizar issue Linear com objetivo, critérios de aceitação, não-objetivos, riscos, impacto nos dados, plano de testes e autorização existente.
 4. **Implementação:** branch própria a partir da baseline; commits pequenos, revisão de diff, sem mudanças não relacionadas. Se houver incompatibilidade com o histórico, desenhar migração antes de escrever.
 5. **Validação:** executar integralmente SAFE_CHECKLIST; documentar comandos/cenários, resultados, limitações e testes em dispositivos reais que estejam pendentes. Verificação de sintaxe nunca equivale a teste funcional.
-6. **Entrega:** PR ou build de teste para revisão, com changelog, versão e resultados; publicação só com autorização específica. Confirmar read-back do artefacto publicado e cache offline.
+6. **Entrega:** PR ou build de teste para revisão, com changelog, versão e resultados; publicação segundo a autorização permanente e exceções da secção 2.3. Confirmar read-back do artefacto publicado e cache offline.
 7. **Aceitação:** registar feedback e evidência de validação do utilizador; distinguir implementado, tecnicamente testado, validado pelo utilizador e SAFE.
 8. **Continuidade:** atualizar Linear (issue, bug log, roadmap e checkpoint) e os documentos GitHub pertinentes após cada alteração.
 
