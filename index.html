@@ -11236,14 +11236,14 @@ async function sync(){
   quiet=true;let changed=false;
   try{
    for(const key of KEYS){
-    const local=read(key),map=new Map(local.map(x=>[idOf(x),x]));
+    const local=read(key),map=new Map(local.map(x=>[idOf(x),x]));let keyChanged=false;
     for(const [k,remote] of adopt){
      if(remote.key!==key||conflicts[k]||meta.pending[k])continue;
      const lh=map.has(remote.id)?hash(map.get(remote.id)):null;
      if(lh!==null&&meta.known[k]!==lh)continue;
-     map.set(remote.id,remote.data);meta.known[k]=hash(remote.data);changed=true;
+     map.set(remote.id,remote.data);meta.known[k]=hash(remote.data);keyChanged=true;
     }
-    if(changed&&[...adopt.values()].some(x=>x.key===key))nativeSet.call(localStorage,key,JSON.stringify([...map.values()]));
+    if(keyChanged){nativeSet.call(localStorage,key,JSON.stringify([...map.values()]));changed=true}
    }
   }finally{quiet=false}
   meta.conflicts=conflicts;persist();
