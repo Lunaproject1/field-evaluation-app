@@ -57,3 +57,8 @@ ID | Versão | Ambiente | Passos | Esperado | Observado | Severidade | Impacto |
 - GitHub read-back confirma `index.html` v38.56 e `sw.js` cache v38-56. UI Individual Progress fases 1/2 incluídas.
 - QA: sintaxe 5 scripts PASS; estatísticas sintéticas PASS; read-back GitHub PASS. Teste de URL publicada, browser Android, offline, import/export, sync, regressão completa: NOT RUN. **PUBLISHED, NOT SAFE** até validação integral.
 - Bug log: sem novos bugs confirmados neste checkpoint.
+
+## Checkpoint 23-11-2026 — TUG-64 / TUG-65
+- Structured Individual Performance Report implemented in isolated branch `feature/tug-64-individual-report` commit `953c652150336a4bc709e1db8a73697d25264dd1` (draft PR #2). Five scripts parse PASS; browser/PWA/SAFE NOT RUN. No merge or deployment.
+- TUG-65: secure individual training archive and medical report attachments planned; **not implemented**. Requires encrypted storage, secure backup/restore and access controls before accepting third-party health data. Do not put medical data in existing localStorage, sync, Linear or GitHub.
+- Bug log: no new confirmed bugs.
