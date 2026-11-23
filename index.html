@@ -1101,6 +1101,13 @@ body.chevron-table-focus #chevronExportModal { z-index: 1200; }
 /* Adjusted classifications are visually distinct from standard four-event grades. */
 .badge.adjusted-classification {background:#f3e8ff!important;color:#6b21a8!important;border:1px solid #a855f7!important;box-shadow:inset 0 0 0 1px rgba(168,85,247,.12);}
 body.dark .badge.adjusted-classification {background:#3b1b53!important;color:#e9d5ff!important;border-color:#c084fc!important;}
+
+/* Individual Progress — LUNA phases 1 & 2 */
+.ip-profile{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:18px;border:1px solid var(--border);border-radius:14px;background:var(--surface2);margin-bottom:12px}
+.ip-profile h3{margin:4px 0;font-size:24px}.ip-eyebrow{font-size:10px;letter-spacing:1.6px;font-weight:800;color:var(--muted)}.ip-profile-sub,.ip-stat-sub,.ip-note{font-size:12px;color:var(--muted);line-height:1.55}.ip-pill{padding:8px 12px;border-radius:30px;background:var(--surface);border:1px solid var(--border);font-size:12px;font-weight:700}
+.ip-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 18px}.ip-stat{padding:15px;border:1px solid var(--border);background:var(--surface);border-radius:12px;min-width:0}.ip-stat-label{font-size:10px;letter-spacing:.7px;font-weight:800;color:var(--muted)}.ip-stat-value{font-size:23px;font-weight:800;margin:6px 0;overflow-wrap:anywhere}
+.ip-tabs{display:flex;flex-wrap:wrap;gap:5px;border-bottom:1px solid var(--border);margin:12px 0 18px}.ip-tab{border:0;background:transparent;color:var(--muted);font-weight:700;padding:12px;cursor:pointer;border-bottom:3px solid transparent}.ip-tab.active{color:var(--accent);border-bottom-color:var(--accent)}.ip-tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.ip-content h4{margin:20px 0 10px}.ip-content .tbl-wrap{overflow-x:auto;max-width:100%}.ip-table{white-space:nowrap;min-width:600px}.ip-table th small{display:block;font-weight:400;color:var(--muted)}.ip-table th[scope=row]{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}.ip-content p{line-height:1.55}
+@media(max-width:600px){.ip-profile{padding:12px}.ip-profile h3{font-size:20px}.ip-stat-value{font-size:20px}.ip-tabs{flex-wrap:nowrap;overflow-x:auto}.ip-tab{white-space:nowrap;padding:10px 9px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -4623,7 +4630,7 @@ function renderAll() {
   updateWorkflowIndicators();
 }
 
-const progressUi={key:'',selected:null,report:''};
+const progressUi={key:'',selected:null,report:'',tab:'Overview'};
 function physicalProgressKey(e){return normalizePhysicalLinkValue(e.callsignNorm||e.callsign||e.nome||e.name||'');}
 function physicalProgressDate(e){return normalizeDateInput(e.recordDate||e.dataISO||e.createdAt||'')||'';}
 function physicalProgressSorted(items){return [...items].sort((a,b)=>physicalProgressDate(a).localeCompare(physicalProgressDate(b))||String(a.dataISO||a.createdAt||'').localeCompare(String(b.dataISO||b.createdAt||''))||String(a.id||'').localeCompare(String(b.id||'')));}
@@ -4656,6 +4663,40 @@ function physicalProgressGroups(){
  const groups=new Map();
  state.entries.forEach(e=>{const key=physicalProgressKey(e);if(!key)return;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(e);});
  return groups;
+}
+
+function physicalProgressAdvanced(selected,valid,sorted,metrics,chart,table,narrative,scoreChange,weightValues,metricLabels,metric){
+ const latest=valid[valid.length-1],prev=valid[valid.length-2],first=valid[0];
+ const status=e=>isAdjustedRecord(e)?'NOT ASSESSED':physicalProgressComplete(e)?evaluateRoleStandard(e).result:'Incomplete';
+ const stat=arr=>{if(!arr.length)return null;const mean=arr.reduce((a,b)=>a+b,0)/arr.length;return {n:arr.length,mean,min:Math.min(...arr),max:Math.max(...arr),range:Math.max(...arr)-Math.min(...arr),sd:Math.sqrt(arr.reduce((a,b)=>a+(b-mean)**2,0)/arr.length)};};
+ const fmt=(n,u='')=>n===null||n===undefined?'—':physicalProgressFormat(n)+(u?' '+u:'');
+ const box=(label,value,sub)=>'<div class="ip-stat"><div class="ip-stat-label">'+esc(label)+'</div><div class="ip-stat-value">'+esc(value)+'</div><div class="ip-stat-sub">'+esc(sub)+'</div></div>';
+ const profile='<div class="ip-profile"><div><div class="ip-eyebrow">INDIVIDUAL PERFORMANCE</div><h3>'+esc(sorted[0]?.callsign||sorted[0]?.nome||'—')+'</h3><div class="ip-profile-sub">'+esc(sorted.length+' total assessments · '+selected.length+' selected · Latest '+(physicalProgressDate(sorted[sorted.length-1])||'undated'))+'</div></div><span class="ip-pill">'+esc(latest?status(latest):'No complete assessment')+'</span></div>';
+ const scores=valid.map(e=>physicalProgressValue(e,'total')).filter(Number.isFinite),ss=stat(scores);
+ const weights=selected.filter(e=>physicalProgressValue(e,'weightKg')!==null),ws=stat(weightValues);
+ const scoreComparable=valid.length>=2&&valid.every(e=>e.role===valid[0].role);
+ const summary='<div class="ip-stats">'+box('LATEST TOTAL',latest?fmt(latest.total,'pts'):'—',latest?physicalProgressDate(latest):'No complete assessment')+box('PERSONAL BEST',ss?fmt(ss.max,'pts'):'—',ss?valid.find(e=>e.total===ss.max)?physicalProgressDate(valid.find(e=>e.total===ss.max)):'':'No scores')+box('SCORE CHANGE',scoreComparable?scoreChange:'—',scoreComparable?'First to latest, same standard':'Needs 2 comparable assessments')+box('WEIGHT',ws?fmt(weightValues[weightValues.length-1],'kg'):'—',ws&&ws.n>1?'Change '+fmt(weightValues[weightValues.length-1]-weightValues[0],'kg'):'Descriptive only')+'</div>';
+ const nav=['Overview','Comparison','Exercise Analysis','Report'],current=nav.includes(progressUi.tab)?progressUi.tab:'Overview';
+ const tabs='<div class="ip-tabs" role="tablist" aria-label="Individual progress sections">'+nav.map(t=>'<button type="button" role="tab" aria-selected="'+(t===current)+'" class="ip-tab '+(t===current?'active':'')+'" data-ip-tab="'+esc(t)+'">'+esc(t)+'</button>').join('')+'</div>';
+ const rows=metrics.map(([name,raw,pts,unit])=>{
+  const entries=selected.filter(e=>physicalProgressMetricValid(e,raw)),nums=entries.map(e=>physicalProgressValue(e,raw)),st=stat(nums);
+  const pe=selected.filter(e=>physicalProgressMetricValid(e,pts)),pv=pe.map(e=>physicalProgressValue(e,pts)),ps=stat(pv);
+  const best=st?raw==='runTime'?st.min:st.max:null;
+  const record=st?entries.find(e=>physicalProgressValue(e,raw)===best):null;
+  const delta=st&&st.n>1?nums[nums.length-1]-nums[0]:null;
+  const trend=st&&st.n>=3?(raw==='runTime'?-delta:delta)>0?'Improving':Math.abs(delta)<0.01?'Stable':'Declining':'Insufficient data';
+  return '<tr><th scope="row">'+esc(name)+'</th><td>'+esc(st?fmt(st.mean,unit):'—')+'</td><td>'+esc(st?fmt(st.min,unit):'—')+'</td><td>'+esc(st?fmt(st.max,unit):'—')+'</td><td>'+esc(st?fmt(st.range,unit):'—')+'</td><td>'+esc(st?fmt(st.sd,unit):'—')+'</td><td>'+esc(st?String(st.n):'0')+'</td><td>'+esc(record?fmt(best,unit)+' · '+physicalProgressDate(record):'—')+'</td><td>'+esc(trend)+'</td><td>'+esc(ps?fmt(ps.mean,'pts'):'—')+'</td></tr>';
+ }).join('');
+ const analysis='<h4>Exercise statistics</h4><p class="ip-note">Population standard deviation; selected eligible records only. A trend requires at least 3 measurements. For running, a lower time is better.</p><div class="tbl-wrap"><table class="ip-table"><thead><tr><th>Exercise</th><th>Mean</th><th>Min</th><th>Max</th><th>Range</th><th>Std dev</th><th>N</th><th>Personal best</th><th>Trend</th><th>Avg points</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+ const thresholds=latest?(latest.role==='combat'?{total:330,each:60}:{total:280,each:50}):null;
+ const deficits=latest?metrics.map(([name,,pts])=>{const v=physicalProgressValue(latest,pts);return '<tr><th scope="row">'+esc(name)+'</th><td>'+esc(v===null?'—':fmt(v,'pts'))+'</td><td>'+esc(fmt(thresholds.each,'pts'))+'</td><td>'+esc(v===null?'—':fmt(Math.max(0,thresholds.each-v),'pts'))+'</td></tr>';}).join(''):'';
+ const requirements=latest?'<h4>Distance to PASS · '+esc(latest.role==='combat'?'Combat':'Non-Combat')+'</h4><p class="ip-note">Latest complete assessment. The total and each exercise must independently meet their minimum. Scores may vary by age group.</p><div class="ip-stats">'+box('TOTAL POINTS NEEDED',fmt(Math.max(0,thresholds.total-latest.total),'pts'),'Minimum '+thresholds.total+' pts')+box('CURRENT RESULT',status(latest),physicalProgressDate(latest))+'</div><div class="tbl-wrap"><table class="ip-table"><thead><tr><th>Exercise</th><th>Points</th><th>Minimum</th><th>Shortfall</th></tr></thead><tbody>'+deficits+'</tbody></table></div>':'';
+ const weightSummary=ws?'<h4>Body weight (descriptive)</h4><p class="ip-note">'+esc('Measurements '+ws.n+' · Mean '+fmt(ws.mean,'kg')+' · Range '+fmt(ws.range,'kg')+(ws.n>1&&weightValues[0]>0?' · Change '+fmt(weightValues[weightValues.length-1]-weightValues[0],'kg')+' ('+fmt(100*(weightValues[weightValues.length-1]-weightValues[0])/weightValues[0],'%')+')':''))+'. Weight change alone does not indicate performance.</p>':'';
+ const compare='<h4>Assessments side by side</h4><p class="ip-note">Chronological columns; scroll horizontally for more dates.</p><div class="tbl-wrap"><table class="ip-table"><thead><tr><th>Metric</th>'+selected.map(e=>'<th>'+esc(physicalProgressDate(e)||'Undated')+'<small>'+esc(e.sessao||'No session')+'</small></th>').join('')+'</tr></thead><tbody>'+[['Standard',e=>e.role==='combat'?'Combat':'Non-Combat'],['Result',status],['Total',e=>physicalProgressComplete(e)?fmt(e.total,'pts'):'—'],...metrics.flatMap(([name,raw,pts,unit])=>[[name+' '+unit,e=>physicalProgressMetricValid(e,raw)?fmt(physicalProgressValue(e,raw),unit):'—'],[name+' points',e=>physicalProgressMetricValid(e,pts)?fmt(physicalProgressValue(e,pts),'pts'):'—']]),['Weight',e=>physicalProgressValue(e,'weightKg')===null?'—':fmt(physicalProgressValue(e,'weightKg'),'kg')]].map(([label,get])=>'<tr><th scope="row">'+esc(label)+'</th>'+selected.map(e=>'<td>'+esc(get(e))+'</td>').join('')+'</tr>').join('')+'</tbody></table></div><h4>Detailed history</h4>'+table;
+ const overview='<h4>Performance overview</h4><p>'+esc(narrative)+'</p><h4>Trend · '+esc(metricLabels[metric]||metric)+'</h4>'+chart+'<p class="ip-note">'+esc(ss?'Selected complete assessments: '+ss.n+' · Mean total '+fmt(ss.mean,'pts')+' · Range '+fmt(ss.range,'pts')+' · Standard deviation '+fmt(ss.sd,'pts'):'No complete scores selected')+'</p>'+requirements+weightSummary;
+ const report='<h4>Individual progress report</h4><p>'+esc(narrative)+'</p><p class="ip-note">Use “Copy progress report” above to copy the chronological assessment table and summary.</p>'+table;
+ const sections={'Overview':overview,'Comparison':compare,'Exercise Analysis':analysis,'Report':report};
+ return profile+summary+tabs+'<div class="ip-content" role="tabpanel">'+sections[current]+'</div>';
 }
 function renderPhysicalProgress(){
  const select=$('physicalProgressSoldier'),out=$('physicalProgressResults'),search=$('physicalProgressSearch'),controls=$('physicalProgressControls');
@@ -4719,7 +4760,7 @@ function renderPhysicalProgress(){
  const up=changes.filter(x=>x.delta>0).sort((a,b)=>b.delta-a.delta),down=changes.filter(x=>x.delta<0).sort((a,b)=>a.delta-b.delta);
  const statusChanges=valid.map(e=>evaluateRoleStandard(e).result);
  const narrative='Selected assessments: '+selected.length+'. Complete: '+valid.length+'. Total score change: '+scoreChange+'. '+(up.length?'Largest exercise improvement: '+up[0].name+' (+'+physicalProgressFormat(up[0].delta)+' pts). ':'')+(down.length?'Largest exercise decline: '+down[0].name+' ('+physicalProgressFormat(down[0].delta)+' pts). ':'')+(statusChanges.length>=2?'Standard result: '+statusChanges[0]+' → '+statusChanges[statusChanges.length-1]+'. ':'')+'Excluded or incomplete assessments are not used for score trends. Weight is descriptive, not a fitness judgment.';
- out.innerHTML=summary+'<h4 style="margin:12px 0 8px;">Overview</h4><p>'+esc(narrative)+'</p><h4 style="margin:18px 0 8px;">Trend · '+esc(metricLabels[metric])+'</h4>'+chart+'<h4 style="margin:18px 0 8px;">Exercise analysis</h4><div style="display:flex;flex-wrap:wrap;gap:10px;">'+exerciseCards+'</div><h4 style="margin:18px 0 8px;">Compare selected assessments</h4>'+(selected.length?table:'<p>No assessments selected.</p>')+'<p style="color:var(--muted);margin-top:12px;">Comparisons use chronological order. Combat and Non-Combat standards are different. Raw exercise results and points are shown separately; age-group scoring may change. Run time: lower is better. A change in body weight is not automatically positive or negative.</p>';
+ out.innerHTML=physicalProgressAdvanced(selected,valid,sorted,metrics,chart,table,narrative,scoreChange,weightValues,metricLabels,metric);
  progressUi.report='INDIVIDUAL PROGRESS\nSoldier: '+(sorted[0].callsign||sorted[0].nome||'—')+'\n'+narrative+'\n\n'+tableCols.map(([label])=>label).join('\t')+'\n'+selected.map(e=>tableCols.map(([,get])=>String(get(e))).join('\t')).join('\n');
 }
 /* ═══════════════════════════════════════════════════
@@ -4730,6 +4771,8 @@ function init() {
   state.entries=loadEntries();
   $('physicalProgressSoldier')?.addEventListener('change',()=>{progressUi.key=$('physicalProgressSoldier').value;progressUi.selected=null;renderPhysicalProgress();});
   $('physicalProgressSearch')?.addEventListener('input',renderPhysicalProgress);
+  $('physicalProgressResults')?.addEventListener('click',e=>{const tab=e.target.closest('[data-ip-tab]');if(tab){progressUi.tab=tab.getAttribute('data-ip-tab');renderPhysicalProgress();}});
+
   $('physicalProgressMetric')?.addEventListener('change',renderPhysicalProgress);
   $('physicalProgressDates')?.addEventListener('change',e=>{const id=e.target?.dataset?.progressId;if(!id)return;if(e.target.checked)progressUi.selected.add(id);else progressUi.selected.delete(id);renderPhysicalProgress();});
   $('physicalProgressAll')?.addEventListener('click',()=>{progressUi.selected=null;renderPhysicalProgress();});
