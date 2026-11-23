@@ -43,3 +43,8 @@ Em cada entrega: data, versão, issue Linear, baseline SHA, commit/PR, alteraç�
 
 ## 7. Referências
 [SOP](SOP.md) · [SAFE](SAFE_CHECKLIST.md) · [ROADMAP](ROADMAP.md) · [Projeto Linear](https://linear.app/tuga1989/project/field-evaluation-app-physical-and-shooting-77b4c7208ae3) · [LUNA Dossier](https://linear.app/tuga1989/document/luna-dossier-tecnico-oficial-2713d1eb291d)
+
+## Checkpoint de desenvolvimento — 23-11-2026
+- TUG-61 e TUG-62 implementados em branch isolada `feature/tug-61-62-individual-progress` no commit `1c9aa476da8c7fd3825a8ac8a40122cce40dfb60`.
+- Novos separadores, perfil, indicadores, comparação lado a lado, estatísticas descritivas, recordes, tendências e distância aos mínimos. Sem migração ou alteração deliberada de dados; Shooting não modificado.
+- QA limitado a parse de scripts e teste sintético de estatísticas. SAFE, browser e Android pendentes. **Não publicado**; `main` permanece v38.55.
