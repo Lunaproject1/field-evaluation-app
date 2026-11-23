@@ -51,3 +51,9 @@ ID | Versão | Ambiente | Passos | Esperado | Observado | Severidade | Impacto |
 - **QA executado:** parse de 5 scripts inline PASS; teste unitário sintético de 3 avaliações para estatísticas/tendência PASS; inspeção de existência do módulo Shooting PASS. **NOT RUN:** testes reais Android/PWA, browser, offline, import/export, sync, regressões completas e SAFE integral. **Estado:** TECH CHECKED, não SAFE.
 - **Publicação:** não autorizada; não houve merge nem alteração à aplicação em produção. Aguardar testes de regressão e autorização específica.
 - **Bug log:** nenhum bug confirmado neste checkpoint; riscos existentes mantidos.
+
+## Release v38.56 — 23-11-2026
+- Autorização explícita do utilizador para publicar e testar imediatamente; PR #1 merged em `main` (`dc638b2c9b96b97ee859d2af790902553c9aee6a`).
+- GitHub read-back confirma `index.html` v38.56 e `sw.js` cache v38-56. UI Individual Progress fases 1/2 incluídas.
+- QA: sintaxe 5 scripts PASS; estatísticas sintéticas PASS; read-back GitHub PASS. Teste de URL publicada, browser Android, offline, import/export, sync, regressão completa: NOT RUN. **PUBLISHED, NOT SAFE** até validação integral.
+- Bug log: sem novos bugs confirmados neste checkpoint.
