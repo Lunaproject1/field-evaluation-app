@@ -79,3 +79,10 @@ ID | Versão | Ambiente | Passos | Esperado | Observado | Severidade | Impacto |
 - QA: parse de 5 scripts JS PASS; verificação estática de secção, listeners e cache PASS; read-back main PASS. Testes browser real, Android/PWA, offline, import/export e SAFE integral NOT RUN. Estado PUBLISHED/TECH CHECKED, não SAFE.
 - Riscos: agrupamento por callsign não garante identidade única; informação de limitações pode ser sensível, pelo que se deve evitar diagnósticos e usar apenas restrições funcionais necessárias. A app ainda não dispõe de encriptação/autorização clínica específica.
 - Bug log: sem novo bug funcional confirmado; testes de regressão pendentes.
+
+## 23-11-2026 — TUG-66 auditoria da sincronização v38.58
+- Auditoria estática identificou sincronização Google Sheets existente (OAuth, aba Records, 6 chaves localStorage), mas **não segura** para concorrência multidispositivo.
+- Falhas críticas: apagamentos por ausência local e descarte silencioso de edições locais quando timestamp remoto é superior. Riscos altos: ausência de read-back, IDs frágeis, race conditions, parsing silencioso.
+- Relatório técnico: `docs/SYNC_AUDIT_TUG-66.md`, branch `audit/tug-66-sync-integrity`, PR #4 draft. Sem alteração à aplicação, dados reais ou Google Sheets.
+- QA: auditoria estática PASS; critérios de integridade sync FAIL; testes reais Google/Android/offline/backup NOT RUN. Estado AUDITED, NOT SAFE. v38.58 mantém-se publicada. Nenhum registo apagado intencionalmente será restaurado.
+- Próximo passo: implementar protocolo seguro e testá-lo em ambiente sintético isolado antes de migração/publicação.
