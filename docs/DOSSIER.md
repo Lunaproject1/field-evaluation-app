@@ -66,3 +66,12 @@ Em cada entrega: data, versão, issue Linear, baseline SHA, commit/PR, alteraç�
 - QA: sintaxe de 5 scripts PASS; verificação estrutural de 5 secções PASS; read-back `main` PASS. Teste de dispositivo/browser, offline, import/export e SAFE completo NOT RUN. Estado PUBLISHED, não SAFE.
 - TUG-65 arquivo de relatórios médicos e treinos adaptados permanece pendente, sem guardar dados médicos até segurança adequada.
 - Bug log: problema de processo confirmado — entrega anterior apenas em PR/ZIP em vez de publicação de teste. Resolvido por publicação v38.57 e SOP v2.2.
+
+## 23-11-2026 — v38.58 TUG-65 (publicada para teste)
+- Âmbito final: sem fotografias, anexos ou relatórios médicos. Mantêm-se notas funcionais de treino por exercício e por avaliação/data, associadas a `exerciseNotes` e `exerciseExcluded` existentes; sem migração.
+- Individual Progress > Report: secção Assessment notes & limitations, com data, exercício, estado e botão para abrir/editar a nota da avaliação correspondente.
+- Editor de notas: opção explícita de copiar nota de avaliação anterior do mesmo callsign e exercício, com confirmação; **nunca reutiliza automaticamente** nem altera automaticamente a exclusão. Histórico anterior preservado.
+- PR #3 merge `a660323bd067d30e52d41354a4cf6ba4fab8a168`; index v38.58 e SW cache v38-58 confirmados em main.
+- QA: parse de 5 scripts JS PASS; verificação estática de secção, listeners e cache PASS; read-back main PASS. Testes browser real, Android/PWA, offline, import/export e SAFE integral NOT RUN. Estado PUBLISHED/TECH CHECKED, não SAFE.
+- Riscos: agrupamento por callsign não garante identidade única; informação de limitações pode ser sensível, pelo que se deve evitar diagnósticos e usar apenas restrições funcionais necessárias. A app ainda não dispõe de encriptação/autorização clínica específica.
+- Bug log: sem novo bug funcional confirmado; testes de regressão pendentes.
