@@ -1,4 +1,4 @@
-# FIELD EVALUATION APP — SAFE CHECKLIST OFICIAL v2.0
+# FIELD EVALUATION APP — SAFE CHECKLIST OFICIAL v2.1
 **Nova checklist do projeto, 23-11-2026.** Substitui a checklist antiga eliminada. Cada item deve ser marcado **PASS / FAIL / NOT RUN / N/A** com evidência e justificação. Uma release só é **SAFE** se os gates aplicáveis passarem; testes não realizados não podem ser declarados aprovados.
 
 ## A. Fonte e âmbito
@@ -50,7 +50,7 @@
 ## G. Entrega e aceitação
 - [ ] Evidências dos testes e lacunas registadas no Linear.
 - [ ] PR/commit, SHA, versão, changelog e rollback descritos.
-- [ ] Autorização explícita para merge/publicação confirmada.
+- [ ] Autorização permanente para publicação de teste aplicável ou autorização específica conforme risco confirmada.
 - [ ] Read-back do deploy e smoke test da URL final efetuados.
 - [ ] Aceitação do utilizador registada separadamente da validação técnica.
 - [ ] Dossier, roadmap, bug log e checkpoint atualizados.
