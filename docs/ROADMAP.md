@@ -1,5 +1,5 @@
 # FIELD EVALUATION APP — ROADMAP, CHANGE LOG E BUG LOG v2.0
-**Checkpoint:** 23-11-2026. Roadmap vivo no modelo LUNA Training TUG-16; issues Linear guardam tarefas individuais e decisões.
+**Checkpoint:** 23-11-2026. Integração formal na família LUNA. Roadmap vivo no modelo LUNA Training TUG-16; issues Linear guardam tarefas individuais e decisões.
 
 ## Baseline
 - [x] v38.52 — Quick Brief aprovado.
@@ -30,7 +30,7 @@
 - [ ] Endurecimento do service worker e auditoria de recuperação offline, se testes confirmarem falhas.
 
 ## Change log
-- **23-11-2026:** criado projeto Linear P-TUG-3, quatro documentos de gestão v1.0; após esclarecimento do proprietário, normas antigas são intencionalmente obsoletas, substituídas por SOP/SAFE/Dossier/Roadmap v2.0 no GitHub e Linear. **Sem alterações ao código da aplicação.**
+- **23-11-2026 (integração LUNA):** SOP v2.1 exige GitHub + Linear em cada alteração, com checkpoints, issues, testes, bugs, documentação e continuidade; projeto Linear renomeado para LUNA | Field Evaluation App. Apenas documentação/governação, sem alterações à app. Commit SOP: `1cbd6e4196f4a2c2032d9220af1de45477a04e73`.\n- **23-11-2026:** criado projeto Linear P-TUG-3, quatro documentos de gestão v1.0; após esclarecimento do proprietário, normas antigas são intencionalmente obsoletas, substituídas por SOP/SAFE/Dossier/Roadmap v2.0 no GitHub e Linear. **Sem alterações ao código da aplicação.**
 
 ## Bug log
 - **Sem novos bugs confirmados nesta operação.**
