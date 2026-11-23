@@ -53,3 +53,8 @@ Em cada entrega: data, versão, issue Linear, baseline SHA, commit/PR, alteraç�
 - PR #1 merged com autorização expressa para disponibilizar a app para teste. Commit merge `dc638b2c9b96b97ee859d2af790902553c9aee6a`.
 - Read-back em `main`: index v38.56, service worker field-eval-v38-56. Publicada via GitHub Pages (propagação e browser ainda por confirmar).
 - Estado PUBLISHED/TECH CHECKED; não SAFE. QA real, offline, import/export, Shooting, Android e aceitação pendentes.
+
+## Checkpoint 23-11-2026 — TUG-64 / TUG-65
+- Structured Individual Performance Report implemented in isolated branch `feature/tug-64-individual-report` commit `953c652150336a4bc709e1db8a73697d25264dd1` (draft PR #2). Five scripts parse PASS; browser/PWA/SAFE NOT RUN. No merge or deployment.
+- TUG-65: secure individual training archive and medical report attachments planned; **not implemented**. Requires encrypted storage, secure backup/restore and access controls before accepting third-party health data. Do not put medical data in existing localStorage, sync, Linear or GitHub.
+- Bug log: no new confirmed bugs.
