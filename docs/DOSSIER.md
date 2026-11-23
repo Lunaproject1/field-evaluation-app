@@ -75,3 +75,9 @@ Em cada entrega: data, versão, issue Linear, baseline SHA, commit/PR, alteraç�
 - QA: parse de 5 scripts JS PASS; verificação estática de secção, listeners e cache PASS; read-back main PASS. Testes browser real, Android/PWA, offline, import/export e SAFE integral NOT RUN. Estado PUBLISHED/TECH CHECKED, não SAFE.
 - Riscos: agrupamento por callsign não garante identidade única; informação de limitações pode ser sensível, pelo que se deve evitar diagnósticos e usar apenas restrições funcionais necessárias. A app ainda não dispõe de encriptação/autorização clínica específica.
 - Bug log: sem novo bug funcional confirmado; testes de regressão pendentes.
+
+## 23-11-2026 — TUG-66 implementação preliminar v38.59 (não publicada)
+- PR #5 draft: https://github.com/Lunaproject1/field-evaluation-app/pull/5; código conservador para sincronização Google Sheets, preservação de conflitos, sem tombstones implícitos, read-back por operação, snapshot/backup exportável, SW reforçado.
+- Testes sintéticos isolados PASS: bootstrap, cloud-only, local-only, conflito e igualdade. Sintaxe 5 scripts PASS.
+- **Bloqueadores SAFE:** sem testes Google reais, dois dispositivos, offline PWA, restore, conflitos resolvidos pela interface, eliminações explícitas propagadas. App publicada permanece v38.58; sem alterações aos dados reais.
+- Dossier técnico completo: `docs/SYNC_IMPLEMENTATION_TUG-66.md`. Bug log: falhas S1/S2 mitigadas na branch; restantes riscos abertos e não declarados resolvidos em produção.
