@@ -48,3 +48,8 @@ Em cada entrega: data, versão, issue Linear, baseline SHA, commit/PR, alteraç�
 - TUG-61 e TUG-62 implementados em branch isolada `feature/tug-61-62-individual-progress` no commit `1c9aa476da8c7fd3825a8ac8a40122cce40dfb60`.
 - Novos separadores, perfil, indicadores, comparação lado a lado, estatísticas descritivas, recordes, tendências e distância aos mínimos. Sem migração ou alteração deliberada de dados; Shooting não modificado.
 - QA limitado a parse de scripts e teste sintético de estatísticas. SAFE, browser e Android pendentes. **Não publicado**; `main` permanece v38.55.
+
+## Release v38.56 — 23-11-2026
+- PR #1 merged com autorização expressa para disponibilizar a app para teste. Commit merge `dc638b2c9b96b97ee859d2af790902553c9aee6a`.
+- Read-back em `main`: index v38.56, service worker field-eval-v38-56. Publicada via GitHub Pages (propagação e browser ainda por confirmar).
+- Estado PUBLISHED/TECH CHECKED; não SAFE. QA real, offline, import/export, Shooting, Android e aceitação pendentes.
