@@ -43,3 +43,11 @@ Versão | Issue | Baseline SHA | Branch/PR | Commit | Alterações | Testes PASS
 
 ## Modelo de bug
 ID | Versão | Ambiente | Passos | Esperado | Observado | Severidade | Impacto | Evidência | Causa confirmada/hipótese | Fix | Teste regressão | Estado.
+
+## Checkpoint de implementação — 23-11-2026 (branch de desenvolvimento)
+- **TUG-61 / TUG-62:** código implementado em `feature/tug-61-62-individual-progress`, commit `1c9aa476da8c7fd3825a8ac8a40122cce40dfb60`; app publicada `main` mantém v38.55.
+- Fase 1 implementada em branch: perfil do militar, cartões de indicadores, separadores Overview/Comparison/Exercise Analysis/Report, comparação cronológica lado a lado e estilos responsivos.
+- Fase 2 implementada em branch: média, mínimo, máximo, amplitude, desvio-padrão populacional, tamanho de amostra, recorde pessoal/data, tendência com 3+ observações, distância aos mínimos por exercício/total e peso descritivo.
+- **QA executado:** parse de 5 scripts inline PASS; teste unitário sintético de 3 avaliações para estatísticas/tendência PASS; inspeção de existência do módulo Shooting PASS. **NOT RUN:** testes reais Android/PWA, browser, offline, import/export, sync, regressões completas e SAFE integral. **Estado:** TECH CHECKED, não SAFE.
+- **Publicação:** não autorizada; não houve merge nem alteração à aplicação em produção. Aguardar testes de regressão e autorização específica.
+- **Bug log:** nenhum bug confirmado neste checkpoint; riscos existentes mantidos.
