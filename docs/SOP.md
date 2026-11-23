@@ -1,11 +1,23 @@
-# FIELD EVALUATION APP — SOP OFICIAL v2.0
-**Aprovado como nova base de trabalho documental em 23-11-2026.** Substitui os procedimentos antigos eliminados pelo proprietário. Governa o processo de desenvolvimento; não certifica retroativamente versões da aplicação.
+# FIELD EVALUATION APP — SOP OFICIAL v2.1
+**Atualizado em 23-11-2026 para integração obrigatória no ecossistema LUNA.** Substitui os procedimentos antigos eliminados pelo proprietário. Governa o processo de desenvolvimento; não certifica retroativamente versões da aplicação.
 
 ## 1. Governação e fontes
 - **GitHub:** `Lunaproject1/field-evaluation-app`, código-fonte e documentação versionada. Branch `main` é a referência publicada; usar branch de trabalho e PR para alterações futuras sempre que possível.
 - **Linear:** projeto Field Evaluation App — Physical & Shooting, fonte de verdade de tarefas, decisões, bugs, roadmap, QA, release e aceitação. Cada issue deve apontar para PR/commit, quando aplicável.
 - **Ecossistema LUNA:** seguir os princípios de documentação viva, checkpoint de continuidade, auditoria não destrutiva, validação separada de aceitação e gestão de bugs usados no Dossier Técnico Oficial, Estado Atual e TUG-16/TUG-27. Não assumir partilha de backend ou dados com LUNA Training.
 - **Esta documentação substitui os SOP/checklists antigos apagados**, não exige a sua recuperação. Alterações futuras às normas devem ser registadas em GitHub e refletidas no Linear.
+
+## 1A. Integração obrigatória no projeto LUNA
+- **Field Evaluation App é uma aplicação integrante do projeto global LUNA**, tal como as restantes apps. Mantém repositório, módulos e dados próprios, mas adota as guidelines transversais LUNA, adaptadas ao seu contexto.
+- O projeto Linear Field Evaluation App é a área de trabalho específica dentro da organização LUNA. Relacionar as tarefas com iniciativas LUNA quando disponíveis, sem confundir a app com LUNA Training.
+- **Leitura obrigatória antes de cada alteração:** guidelines e documentação transversal LUNA em vigor no Linear, além de SOP, SAFE_CHECKLIST, DOSSIER, ROADMAP e issues desta aplicação no GitHub/Linear.
+- **GitHub + Linear são obrigatórios em TODAS as atualizações** (funcionalidades, hotfixes, QA, mudanças documentais e releases). Não deixar decisões ou passos exclusivamente no chat.
+- **Antes de desenvolver:** abrir/atualizar issue Linear com baseline, pedido, critérios de aceitação, plano, riscos, dependências, tarefas e estado; associar branch/PR GitHub.
+- **Durante o desenvolvimento:** manter a issue Linear com checkpoints, passos concluídos, bloqueios, bugs descobertos, decisões e ligações para commits/PRs.
+- **Após cada atualização:** atualizar código/documentação e histórico no GitHub; atualizar no Linear issue, roadmap, change log, bug log (incluindo ausência de novos bugs), dossier/estado atual, resultados SAFE, versão, commit, link de PR/deploy, pendentes e próximo passo. A documentação deve permitir retomar trabalho sem ler o chat.
+- **Fecho de tarefa:** apenas após registar testes executados vs não executados, aceitação do utilizador, autorização de publicação e estado de entrega. Publicação/merge continuam a exigir autorização explícita.
+- **Sincronização documental:** quando uma guideline específica mudar, atualizar primeiro o documento canónico versionado no GitHub e refletir a mesma regra no documento Linear correspondente, confirmando leitura de retorno. Divergências devem ser registadas e corrigidas antes de declarar fecho.
+- **Nomenclatura:** usar “Field Evaluation App” como nome técnico existente até decisão explícita de renomeação; referências informais a “Field Training App” não autorizam renomear app, URLs, dados ou repositório.
 
 ## 2. Regras permanentes
 1. Nunca reconstruir a app de raiz sem pedido explícito; partir sempre do código existente no GitHub.
