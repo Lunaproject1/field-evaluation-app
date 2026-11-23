@@ -58,3 +58,11 @@ Em cada entrega: data, versão, issue Linear, baseline SHA, commit/PR, alteraç�
 - Structured Individual Performance Report implemented in isolated branch `feature/tug-64-individual-report` commit `953c652150336a4bc709e1db8a73697d25264dd1` (draft PR #2). Five scripts parse PASS; browser/PWA/SAFE NOT RUN. No merge or deployment.
 - TUG-65: secure individual training archive and medical report attachments planned; **not implemented**. Requires encrypted storage, secure backup/restore and access controls before accepting third-party health data. Do not put medical data in existing localStorage, sync, Linear or GitHub.
 - Bug log: no new confirmed bugs.
+
+## 23-11-2026 — Release v38.57 e política de publicação para testes
+- Pedido expresso do utilizador: publicar as alterações solicitadas para teste, sem ficar apenas em ZIP ou PR; atualizar sempre o log GitHub e Linear.
+- TUG-64 Individual Performance Report estruturado publicado por PR #2, merge `9d47525c3d56bbbc33273afd75030052769b213a`; index v38.57 e SW v38-57 confirmados em `main`.
+- SOP v2.2 e SAFE v2.1 refletem autorização permanente para publicar updates solicitados, exceto alterações destrutivas, sensíveis ou com falhas críticas.
+- QA: sintaxe de 5 scripts PASS; verificação estrutural de 5 secções PASS; read-back `main` PASS. Teste de dispositivo/browser, offline, import/export e SAFE completo NOT RUN. Estado PUBLISHED, não SAFE.
+- TUG-65 arquivo de relatórios médicos e treinos adaptados permanece pendente, sem guardar dados médicos até segurança adequada.
+- Bug log: problema de processo confirmado — entrega anterior apenas em PR/ZIP em vez de publicação de teste. Resolvido por publicação v38.57 e SOP v2.2.
