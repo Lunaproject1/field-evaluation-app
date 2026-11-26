@@ -2827,6 +2827,199 @@ body.dark .badge.adjusted-classification {background:#3b1b53!important;color:#e9
 </div>
 
 <script>
+/* TUG-66 v38.59: append-only causal operations, explicit deletions, recoverable conflicts. */
+(function(){
+'use strict';
+const CLIENT='447933051526-jdcl86ljqb6ehsiupr3aomjhia0fbqr2.apps.googleusercontent.com';
+const BOOK='1lB6YwkW0I7_w1677wlqJhaGk45hd__r9Ms3H2s6d9T0';
+const KEYS=['fieldapp.physical.records','fieldapp.shooting.records','fieldapp.notes.records','fieldapp.notes.registry.records','fieldapp.notes.chevrons.records','fieldapp.language.v34test.cards'];
+const META='fieldapp.sync.v3.meta',BACKUP='fieldapp.sync.v3.backup',DEVICE='fieldapp.sync.v1.device';
+const nativeSet=Storage.prototype.setItem,nativeRemove=Storage.prototype.removeItem;
+const $=id=>document.getElementById(id),uid=()=>crypto.randomUUID(),own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+const stable=x=>JSON.stringify(x,(_k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v);
+const idOf=x=>{if(!x||typeof x!=='object'||Array.isArray(x)||typeof x.id!=='string'||!x.id.trim())throw Error('Registo sem ID estável. Exporta o backup e corrige o registo antes de sincronizar.');return x.id};
+const kOf=(key,id)=>JSON.stringify([key,id]);
+function records(x){if(!Array.isArray(x))throw Error('Lista de registos inválida');const ids=new Set();for(const r of x){const id=idOf(r);if(ids.has(id))throw Error('ID duplicado: '+id);ids.add(id)}return x}
+const read=key=>{const raw=localStorage.getItem(key);return raw===null?[]:records(JSON.parse(raw))};
+const fresh=()=>({known:{},heads:{},pending:{},conflicts:{},approved:{},absent:{},revision:0});
+let meta=fresh(),token='',client=null,busy=false,quiet=false,stale=false,timer,lastSync=0;
+const device=localStorage.getItem(DEVICE)||uid();nativeSet.call(localStorage,DEVICE,device);
+function load(){const raw=localStorage.getItem(META);meta=raw?JSON.parse(raw):fresh();for(const k of ['known','heads','pending','conflicts','approved','absent'])if(!meta[k]||typeof meta[k]!=='object'||Array.isArray(meta[k]))throw Error('Metadados de sincronização inválidos')}
+function persist(){meta.revision=(meta.revision||0)+1;nativeSet.call(localStorage,META,JSON.stringify(meta))}
+function status(text){if($('fieldSyncStatus'))$('fieldSyncStatus').textContent=text;if($('fieldSyncBar'))$('fieldSyncBar').dataset.state=text.startsWith('Google verificado')?'connected':/Erro|conflito|revisão|Recarrega/.test(text)?'error':'offline';if($('fieldSyncReview'))$('fieldSyncReview').textContent='Rever ('+Object.keys(meta.conflicts).length+')'}
+function snapshot(){const data={at:new Date().toISOString(),data:{},meta:localStorage.getItem(META)};for(const key of KEYS)data.data[key]=localStorage.getItem(key);if(!localStorage.getItem(BACKUP))nativeSet.call(localStorage,BACKUP,JSON.stringify(data))}
+function operation(key,id,data,deleted,parents){return {key,id,data:deleted?null:data,deleted,op:uid(),parents:[...new Set(parents||[])],at:new Date().toISOString(),device}}
+function mark(key){
+ if(quiet||!KEYS.includes(key))return;
+ load();const list=read(key),ids=new Set(list.map(idOf));
+ for(const r of list){const id=idOf(r),k=kOf(key,id),h=stable(r),p=meta.pending[k];
+  if(p?.deleted)continue;
+  if(meta.known[k]!==h&&(!p||stable(p.data)!==h))meta.pending[k]=operation(key,id,r,false,p?.parents||meta.heads[k]||[]);
+ }
+ // A missing local record is held for review, never converted into a cloud deletion.
+ for(const [k,h] of Object.entries(meta.known)){const [storedKey,id]=JSON.parse(k);if(storedKey===key&&h!==null&&!ids.has(id)&&!meta.pending[k]?.deleted){meta.absent[k]=true;meta.conflicts[k]={key,id,reason:'local-absence',local:null,remote:[]}}}
+ for(const [k,p] of Object.entries(meta.pending))if(p.key===key&&!p.deleted&&!ids.has(p.id)){meta.conflicts[k]={key,id:p.id,reason:'local-absence',local:null,remote:[]};meta.absent[k]=true}
+ persist();status('Alterações locais · sincronização pendente');if(token){clearTimeout(timer);timer=setTimeout(sync,2000)}
+}
+Storage.prototype.setItem=function(key,value){
+ if(this!==localStorage||!KEYS.includes(key)||quiet)return nativeSet.call(this,key,value);
+ if(stale)throw Error('Recarrega esta janela antes de guardar: os dados mudaram noutra janela.');
+ // Validate before mutation; quota errors keep the previous records and pending journal.
+ records(JSON.parse(value));read(key);load();snapshot();const result=nativeSet.call(this,key,value);
+ try{mark(key)}catch(e){status('Erro ao registar alterações · backup local preservado');throw e}return result;
+};
+Storage.prototype.removeItem=function(key){if(this===localStorage&&KEYS.includes(key)&&!quiet)return this.setItem(key,'[]');return nativeRemove.call(this,key)};
+function deleteIntent(key,ids){
+ if(!KEYS.includes(key))return;if(stale)throw Error('Recarrega esta janela antes de apagar.');load();snapshot();
+ const map=new Map(read(key).map(r=>[idOf(r),r]));
+ for(const id of ids){if(!map.has(id))continue;const k=kOf(key,id);meta.pending[k]=operation(key,id,null,true,meta.pending[k]?.parents||meta.heads[k]||[]);delete meta.conflicts[k];delete meta.absent[k]}
+ persist();
+}
+// Only confirmed Delete handlers invoke this. Imports/empty devices never invoke it.
+window.FieldSync={deleteIntent};
+function backup(){const data={},raw={};for(const key of KEYS){raw[key]=localStorage.getItem(key);try{data[key]=raw[key]===null?[]:JSON.parse(raw[key])}catch{data[key]=raw[key]}}let savedMeta;try{load();savedMeta=meta}catch{savedMeta={invalidRaw:localStorage.getItem(META)}}return {app:'field-evaluation-sync-backup',version:3,at:new Date().toISOString(),data,raw,meta:savedMeta,initialSnapshot:JSON.parse(localStorage.getItem(BACKUP)||'null'),recovery:Object.fromEntries(Object.keys(localStorage).filter(k=>k.startsWith('fieldapp.sync.v3.recovery.')).map(k=>[k,JSON.parse(localStorage.getItem(k))])),restoreJournal:JSON.parse(localStorage.getItem('fieldapp.sync.v3.restore')||'null')}}
+function download(){try{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(backup(),null,2)],{type:'application/json'}));a.href=url;a.download='field-evaluation-v38.59-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000)}catch(e){status('Erro no backup: '+e.message)}}
+function restore(payload){
+ if(busy||stale)throw Error('Aguarda a sincronização ou recarrega a janela.');
+ if(payload?.app!=='field-evaluation-sync-backup'||payload.version!==3||!payload.data)throw Error('Backup inválido');
+ // Recovery is a merge, and never automatically resurrects a known deletion.
+ for(const key of KEYS)records(payload.data[key]);
+ load();snapshot();const plans=[];
+ for(const key of KEYS){const local=read(key),map=new Map(local.map(r=>[idOf(r),r]));
+  for(const r of payload.data[key]){const id=idOf(r),k=kOf(key,id);if(meta.known[k]===null||meta.pending[k]?.deleted||meta.absent[k]){meta.conflicts[k]={key,id,reason:'backup-deleted',local:map.get(id)||null,remote:[{data:r,deleted:false,op:'backup'}]};continue}
+   if(!map.has(id)){map.set(id,r)}else if(stable(map.get(id))!==stable(r)){meta.conflicts[k]={key,id,reason:'backup-divergence',local:map.get(id),remote:[{data:r,deleted:false,op:'backup'}]}}
+  }plans.push([key,JSON.stringify([...map.values()])]);
+ }
+ // Write a recovery journal before any key changes. Interrupted recovery can be retried.
+ nativeSet.call(localStorage,'fieldapp.sync.v3.restore',JSON.stringify({at:new Date().toISOString(),before:KEYS.map(key=>[key,localStorage.getItem(key)]),payload}));
+ persist();quiet=true;try{for(const [key,raw] of plans)nativeSet.call(localStorage,key,raw)}finally{quiet=false}
+ KEYS.forEach(mark);nativeRemove.call(localStorage,'fieldapp.sync.v3.restore');status('Backup recuperado · sincronização pendente');
+}
+function review(){
+ load();let dialog=$('fieldSyncDialog');if(!dialog){dialog=document.createElement('dialog');dialog.id='fieldSyncDialog';dialog.style.cssText='max-width:720px;width:90%;max-height:85vh;overflow:auto;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:20px';document.body.appendChild(dialog)}
+ dialog.replaceChildren();const title=document.createElement('h3');title.textContent='Rever sincronização';dialog.appendChild(title);
+ const info=document.createElement('p');info.textContent='As versões divergentes estão preservadas no backup. Escolhe a versão a manter. Registos ausentes na primeira ligação exigem revisão para evitar recuperar eliminações antigas.';dialog.appendChild(info);
+ const close=document.createElement('button');close.textContent='Fechar';close.onclick=()=>dialog.close();dialog.appendChild(close);
+ for(const [k,c] of Object.entries(meta.conflicts)){
+  const card=document.createElement('section');card.style.cssText='border-top:1px solid var(--border);margin-top:14px;padding-top:12px';
+  const label=document.createElement('p');label.textContent=c.key.replace('fieldapp.','')+' · '+c.id+' · '+c.reason;card.appendChild(label);
+  const choices=[{label:c.local?'Manter versão local':'Manter eliminado / ausente',data:c.local||null,deleted:!c.local},...(c.remote||[]).map((r,i)=>({label:r.deleted?'Aceitar eliminação remota':'Usar versão guardada '+(i+1),data:r.data,deleted:r.deleted}))];
+  for(const choice of choices){const details=document.createElement('details'),summary=document.createElement('summary'),pre=document.createElement('pre'),button=document.createElement('button');summary.textContent=choice.label;pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px';pre.textContent=JSON.stringify(choice.data,null,2);button.textContent=choice.label;button.type='button';button.onclick=()=>{try{resolve(k,choice);dialog.close();location.reload()}catch(e){status('Erro: '+e.message)}};details.append(summary,pre,button);card.appendChild(details)}dialog.appendChild(card);
+ }
+ if(!Object.keys(meta.conflicts).length){const p=document.createElement('p');p.textContent='Sem conflitos por resolver.';dialog.appendChild(p)}if(!dialog.open)dialog.showModal();
+}
+function resolve(k,choice){
+ if(busy||stale)throw Error('Aguarda a sincronização ou recarrega.');load();const c=meta.conflicts[k];if(!c)return;
+ snapshot();nativeSet.call(localStorage,'fieldapp.sync.v3.recovery.'+uid(),JSON.stringify({at:new Date().toISOString(),data:Object.fromEntries(KEYS.map(key=>[key,read(key)])),meta}));const list=read(c.key),map=new Map(list.map(r=>[idOf(r),r]));if(!choice.deleted&&idOf(choice.data)!==c.id)throw Error('ID da versão inválido');
+ const parents=(c.remote||[]).map(r=>r.op).filter(op=>op!=='backup');meta.approved[k]=parents;
+ // Resolution is an explicit operation. A new remote edit will be detected again.
+ meta.pending[k]=operation(c.key,c.id,choice.data,choice.deleted,parents.length?parents:meta.heads[k]||[]);
+ choice.deleted?map.delete(c.id):map.set(c.id,choice.data);delete meta.conflicts[k];delete meta.absent[k];persist();
+ quiet=true;try{nativeSet.call(localStorage,c.key,JSON.stringify([...map.values()]))}finally{quiet=false}
+}
+function boot(){
+ const bar=document.createElement('div');bar.id='fieldSyncBar';bar.innerHTML='<span id="fieldSyncStatus">Google desligado · dados locais</span><button id="fieldSyncConnect" type="button">Ligar Google</button><button id="fieldSyncNow" type="button">Sincronizar</button><button id="fieldSyncExport" type="button">Backup</button><button id="fieldSyncRestore" type="button">Recuperar</button><button id="fieldSyncReview" type="button">Rever (0)</button><input id="fieldSyncFile" type="file" accept="application/json,.json" hidden>';
+ (document.querySelector('.topbar-right')||document.body).appendChild(bar);
+ $('fieldSyncConnect').onclick=connect;$('fieldSyncNow').onclick=()=>token?sync():connect();$('fieldSyncExport').onclick=download;$('fieldSyncReview').onclick=review;$('fieldSyncRestore').onclick=()=>$('fieldSyncFile').click();
+ $('fieldSyncFile').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const payload=JSON.parse(await f.text());if(confirm('Recuperar este backup sem substituir versões locais divergentes?')){restore(payload);location.reload()}}catch(err){status('Erro: '+err.message)}finally{e.target.value=''}};
+ try{load();snapshot();KEYS.forEach(key=>{read(key);mark(key)});status(Object.keys(meta.conflicts).length?'Dados locais · revisão pendente':'Google desligado · dados locais')}catch(e){status('Erro local: '+e.message)}
+}
+function connect(){
+ if(!navigator.onLine){status('Offline · dados locais');return}if(!window.google?.accounts?.oauth2){status('Google indisponível · tenta novamente');return}
+ if(!client)client=google.accounts.oauth2.initTokenClient({client_id:CLIENT,scope:'https://www.googleapis.com/auth/spreadsheets',error_callback:()=>status('Erro de autorização Google'),callback:r=>{if(r.error||!r.access_token){status('Erro de autorização Google');return}token=r.access_token;sync()}});
+ try{client.requestAccessToken({prompt:'select_account'})}catch(e){status('Erro de autorização Google')}
+}
+async function api(method='GET',body){
+ const url='https://sheets.googleapis.com/v4/spreadsheets/'+BOOK+'/values/'+encodeURIComponent(method==='GET'?'Records!A2:G':'Records!A:G')+(method==='POST'?':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS':'');
+ const r=await fetch(url,{method,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});if(r.status===401)token='';if(!r.ok)throw Error('Google Sheets '+r.status);return r.json();
+}
+function cloudRows(values){
+ const all=new Map();for(const [index,line] of (values||[]).entries()){
+  const [key,id,at,del,json,dev,version]=line;if(!KEYS.includes(key))continue;if(!id||!['TRUE','FALSE'].includes(String(del).toUpperCase()))throw Error('Linha remota inválida');
+  const deleted=String(del).toUpperCase()==='TRUE',data=deleted?null:JSON.parse(json);if(!deleted&&idOf(data)!==id)throw Error('ID remoto inconsistente');
+  let descriptor=null;if(String(version||'').startsWith('3:')){descriptor=JSON.parse(version.slice(2));if(typeof descriptor.op!=='string'||!descriptor.op||!Array.isArray(descriptor.parents)||descriptor.parents.some(x=>typeof x!=='string'))throw Error('Operação remota inválida')}
+  const row={key,id,at,data,deleted,device:dev||'',op:descriptor?.op||'legacy-row-'+(index+2),parents:descriptor?.parents||[],legacy:!descriptor,index};
+  const k=kOf(key,id);if(!all.has(k))all.set(k,[]);const list=all.get(k),duplicate=list.find(x=>x.op===row.op);if(duplicate){if(stable(duplicate.data)!==stable(row.data)||duplicate.deleted!==row.deleted||stable(duplicate.parents)!==stable(row.parents))throw Error('Operação remota duplicada inconsistente');continue}list.push(row);
+ }
+ return all;
+}
+function heads(list){
+ // Legacy rows have no causality. Preserve every distinct historical value
+ // for explicit review; never decide concurrent edits by a device clock.
+ const firstV3=list.find(x=>!x.legacy)?.index??Infinity,old=list.filter(x=>x.legacy&&x.index<firstV3);
+ const bases=new Map(old.map(row=>[stable([row.deleted,row.data]),row]));
+ const nodes=[...bases.values(),...list.filter(x=>!x.legacy||x.index>=firstV3)],consumed=new Set();
+ const map=new Map(list.map(x=>[x.op,x]));
+ for(const row of nodes){const seen=new Set([row.op]),todo=[...row.parents];while(todo.length){const p=todo.pop();if(seen.has(p))continue;seen.add(p);consumed.add(p);const node=map.get(p);if(!node||node.index>=row.index)throw Error('Referência causal remota inválida');todo.push(...node.parents)}}
+ return nodes.filter(x=>!consumed.has(x.op)).sort((a,b)=>a.op.localeCompare(b.op));
+}
+const equal=(r,p)=>r.deleted===p.deleted&&(r.deleted||stable(r.data)===stable(p.data));
+function conflict(key,id,reason,local,remote){return {key,id,reason,local:local||null,remote}}
+async function runSync(){
+ if(!token||!navigator.onLine||stale){status(stale?'Recarrega · dados alterados noutra janela':'Offline ou Google desligado · dados locais');return}
+ busy=true;status('A sincronizar…');let changed=false;
+ try{
+  load();snapshot();KEYS.forEach(mark);const cloud=cloudRows((await api()).values);load();
+  const uploads=[];
+  for(const key of KEYS){const map=new Map(read(key).map(r=>[idOf(r),r]));
+   const ids=new Set([...map.keys(),...[...cloud.values()].filter(v=>v[0].key===key).map(v=>v[0].id),...Object.values(meta.pending).filter(p=>p.key===key).map(p=>p.id)]);
+   for(const id of ids){const k=kOf(key,id),local=map.get(id)||null,p=meta.pending[k],rs=heads(cloud.get(k)||[]),ops=rs.map(r=>r.op),localHash=local?stable(local):null;
+    if(meta.conflicts[k]?.reason?.startsWith('backup-'))continue;
+    if(p&&p.deleted&&local){meta.conflicts[k]=conflict(key,id,'delete-not-saved',local,rs);continue}
+    if(p&&!p.deleted&&!local){meta.absent[k]=true;meta.conflicts[k]=conflict(key,id,'local-absence',null,rs);continue}
+    // An operation already present is acknowledged only after read-back.
+    if(p&&rs.length&&rs.every(r=>equal(r,p))){delete meta.pending[k];meta.known[k]=p.deleted?null:stable(p.data);meta.heads[k]=ops;delete meta.conflicts[k];delete meta.absent[k];continue}
+    if(rs.length>1&&!rs.every(r=>equal(r,rs[0]))){
+     if(p&&ops.every(op=>p.parents.includes(op))){uploads.push(p);continue}
+     meta.conflicts[k]=conflict(key,id,'concurrent-versions',local,rs);continue;
+    }
+    const remote=rs[0];
+    if(p){
+     if(meta.conflicts[k]?.reason?.startsWith('backup-'))continue;
+     if(!remote||ops.every(op=>p.parents.includes(op))){uploads.push(p);continue}
+     meta.conflicts[k]=conflict(key,id,remote.deleted?'remote-delete':'concurrent-edit',local,rs);continue;
+    }
+    if(!remote)continue;
+    if(meta.absent[k]){meta.conflicts[k]=conflict(key,id,'local-absence',local,rs);continue}
+    if(localHash===(remote.deleted?null:stable(remote.data))){meta.known[k]=localHash;meta.heads[k]=ops;delete meta.conflicts[k];continue}
+    if(!own(meta.known,k)){
+     meta.conflicts[k]=conflict(key,id,'first-connection-review',local,rs);continue;
+    }
+    if(meta.known[k]!==localHash){meta.conflicts[k]=conflict(key,id,'divergent-local',local,rs);continue}
+    // A causally newer cloud revision may be applied. Previously observed heads
+    // must be ancestors, so a stale replica cannot silently replace a branch.
+    const all=cloud.get(k)||[],byOp=new Map(all.map(r=>[r.op,r]));const ancestors=new Set(ops),todo=rs.flatMap(r=>r.parents);
+    while(todo.length){const op=todo.pop();if(ancestors.has(op))continue;ancestors.add(op);todo.push(...(byOp.get(op)?.parents||[]))}
+    if(!(meta.heads[k]||[]).every(op=>ancestors.has(op))){meta.conflicts[k]=conflict(key,id,'unrelated-remote',local,rs);continue}
+    // No async boundary between this check and local write.
+    remote.deleted?map.delete(id):map.set(id,remote.data);meta.known[k]=remote.deleted?null:stable(remote.data);meta.heads[k]=ops;delete meta.conflicts[k];changed=true;
+   }
+   if(stable([...map.values()])!==stable(read(key))){quiet=true;try{nativeSet.call(localStorage,key,JSON.stringify([...map.values()]))}finally{quiet=false}}
+  }
+  persist();
+  if(uploads.length){const values=uploads.map(p=>[p.key,p.id,p.at,p.deleted?'TRUE':'FALSE',p.deleted?'':JSON.stringify(p.data),device,'3:'+JSON.stringify({op:p.op,parents:p.parents})]);
+   await api('POST',{values});const verify=cloudRows((await api()).values);load();
+   for(const p of uploads){const k=kOf(p.key,p.id),list=verify.get(k)||[],found=list.find(r=>r.op===p.op&&equal(r,p));
+    if(!found){meta.conflicts[k]=conflict(p.key,p.id,'upload-unverified',read(p.key).find(r=>idOf(r)===p.id),heads(list));continue}
+    const rs=heads(list);if(!rs.every(r=>equal(r,p))){meta.conflicts[k]=conflict(p.key,p.id,'post-upload-conflict',read(p.key).find(r=>idOf(r)===p.id),rs);continue}
+    // A local edit made during fetch must retain its own pending operation.
+    if(meta.pending[k]?.op===p.op){delete meta.pending[k];meta.known[k]=p.deleted?null:stable(p.data);meta.heads[k]=rs.map(r=>r.op);delete meta.conflicts[k];delete meta.absent[k]}
+    else if(meta.pending[k]&&stable(meta.pending[k].parents)===stable(p.parents)){meta.pending[k].parents=rs.map(r=>r.op);meta.known[k]=p.deleted?null:stable(p.data);meta.heads[k]=rs.map(r=>r.op)}
+   }persist();
+  }
+  lastSync=Date.now();const count=Object.keys(meta.conflicts).length,pending=Object.keys(meta.pending).length;
+  status(count?'Google: '+count+' conflito(s) · rever':pending?'Google · alterações pendentes':'Google verificado · '+new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}));
+  if(changed){status('Dados recebidos · recarrega para os abrir');$('fieldSyncNow').textContent='Recarregar';$('fieldSyncNow').onclick=()=>location.reload();stale=true}
+ }catch(e){status('Erro de sincronização: '+e.message)}finally{busy=false}
+}
+async function sync(){if(busy)return;if(!navigator.locks){status('Erro: browser sem bloqueio seguro de sincronização');return}busy=true;try{await navigator.locks.request('field-evaluation-sync-v3',{ifAvailable:true},async lock=>{if(lock)await runSync();else status('Sincronização noutra janela · aguarda')})}finally{busy=false}}
+window.addEventListener('storage',e=>{if(KEYS.includes(e.key)||e.key===null){stale=true;status('Recarrega · dados alterados noutra janela')}});
+window.addEventListener('online',()=>{if(token)sync()});window.addEventListener('offline',()=>status('Offline · dados locais'));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&token)sync()});setInterval(()=>{if(token&&navigator.onLine&&Date.now()-lastSync>120000)sync()},120000);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
+<script>
 /* ══════════════════════════════════════════════════════════════════
    SHARED UTILITIES — used by BOTH modules
    ─────────────────────────────────────────────────────────────────
@@ -3761,6 +3954,7 @@ window.toggleIncomplete = function(id) {
 };
 window.deleteEntry = function(id) {
   if(!confirm('Delete this record?')) return;
+  window.FieldSync?.deleteIntent('fieldapp.physical.records',[id]);
   state.entries=state.entries.filter(e=>e.id!==id);
   saveEntries(); refreshPhysicalWorkflowViews({ profileTarget:selectedRegistryProfileId });
   $('statusBox').textContent='Record deleted.';
@@ -4086,6 +4280,7 @@ function importJSON(ev) {
 }
 function resetAll() {
   if(!confirm('Delete all local records?')) return;
+  window.FieldSync?.deleteIntent('fieldapp.physical.records',state.entries.map(e=>e.id));
   state.entries=[]; saveEntries(); refreshPhysicalWorkflowViews({ profileTarget:null });
   $('statusBox').textContent='All records deleted.';
 }
@@ -5395,6 +5590,7 @@ function editShRecord(id) {
 function deleteShRecord(id) {
   const rec=shRecords.find(r=>r.id===id); if(!rec) return;
   if(!confirm('Delete this shooting record?')) return;
+  window.FieldSync?.deleteIntent('fieldapp.shooting.records',[id]);
   shRecords=shRecords.filter(r=>r.id!==id);
   if(shEditId===id) { shEditId=null; clearShForm(true); }
   saveShRecords(); refreshShootingWorkflowViews();
@@ -8289,6 +8485,7 @@ function deleteRegistryRecord(id) {
   const record = notesRegistryRecords.find(r => r.id === id);
   if(!record) return;
   if(!confirm(`Delete registry profile for ${record.callsign || 'this soldier'}?`)) return;
+  window.FieldSync?.deleteIntent('fieldapp.notes.registry.records',[id]);
   notesRegistryRecords = notesRegistryRecords.filter(r => r.id !== id);
   saveRegistryRecords();
   refreshRegistryWorkflowViews({ chevronTable:true, profileTarget: selectedRegistryProfileId === id ? null : selectedRegistryProfileId });
@@ -8864,6 +9061,7 @@ function deleteChevronRecord(id) {
   const record = notesChevronRecords.find(r => r.id === id);
   if(!record) return;
   if(!confirm(`Delete chevron tracker entry for ${record.callsign || 'this soldier'}?`)) return;
+  window.FieldSync?.deleteIntent('fieldapp.notes.chevrons.records',[id]);
   notesChevronRecords = notesChevronRecords.filter(r => r.id !== id);
   saveChevronRecords();
   refreshChevronWorkflowViews();
@@ -9450,6 +9648,7 @@ function deleteNote(id) {
   const label = note.title || notePreview(note.content, 40) || 'this note';
   if(!confirm(`Delete note: ${label}?`)) return;
   createNotesSnapshot('auto', 'Auto snapshot before delete');
+  window.FieldSync?.deleteIntent('fieldapp.notes.records',[id]);
   notesRecords = notesRecords.filter(n => n.id !== id);
   saveNotesRecords();
   if(notesEditId === id) {
@@ -11104,162 +11303,7 @@ if($('shRecordDate') && !$('shRecordDate').value) $('shRecordDate').value = norm
 </script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>#fieldSyncBar{display:flex;gap:5px;align-items:center;flex-wrap:wrap;max-width:270px;min-width:0;font-size:11px;color:var(--text2);padding:3px 6px;border:1px solid var(--border);border-radius:8px;background:var(--surface2)}#fieldSyncStatus{flex-basis:100%;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#fieldSyncStatus::before{content:"●";color:#9ca3af;margin-right:5px}#fieldSyncBar[data-state="connected"] #fieldSyncStatus::before{color:#059669}#fieldSyncBar[data-state="error"] #fieldSyncStatus::before{color:#dc2626}#fieldSyncBar button{border:1px solid var(--border2);border-radius:6px;padding:3px 6px;background:var(--surface);color:var(--text);cursor:pointer;font-size:11px}</style>
-<script>
-/* TUG-66: conservative, loss-preventing sync. No implicit deletes, no silent conflict resolution. */
-(function(){
-'use strict';
-const CLIENT='447933051526-jdcl86ljqb6ehsiupr3aomjhia0fbqr2.apps.googleusercontent.com';
-const BOOK='1lB6YwkW0I7_w1677wlqJhaGk45hd__r9Ms3H2s6d9T0';
-const KEYS=['fieldapp.physical.records','fieldapp.shooting.records','fieldapp.notes.records','fieldapp.notes.registry.records','fieldapp.notes.chevrons.records','fieldapp.language.v34test.cards'];
-const META='fieldapp.sync.v2.meta',LEGACY='fieldapp.sync.v1.meta',DEVICE='fieldapp.sync.v1.device',BACKUP='fieldapp.sync.v2.backup',nativeSet=Storage.prototype.setItem;
-const device=localStorage.getItem(DEVICE)||crypto.randomUUID();nativeSet.call(localStorage,DEVICE,device);
-const $=id=>document.getElementById(id);
-const idOf=x=>String(x?.id||x?.soldierId||x?.callsign||x?.nome||x?.name||x?.word||JSON.stringify(x));
-const kOf=(key,id)=>key+'|'+id;
-const hash=x=>JSON.stringify(x);
-const parse=(raw,label)=>{let x;try{x=JSON.parse(raw)}catch{throw Error('JSON inválido em '+label)}if(!Array.isArray(x))throw Error('Registos inválidos em '+label);return x};
-const read=key=>{const raw=localStorage.getItem(key);return raw===null?[]:parse(raw,key)};
-let meta;try{meta=JSON.parse(localStorage.getItem(META)||'null')}catch{meta=null}
-if(!meta||typeof meta!=='object')meta={known:{},pending:{},conflicts:{},initialized:false};
-meta.known=meta.known||{};meta.pending=meta.pending||{};meta.conflicts=meta.conflicts||{};
-let token='',client=null,busy=false,quiet=false,timer=null,lastSync=0;
-const persist=()=>nativeSet.call(localStorage,META,JSON.stringify(meta));
-const status=x=>{if($('fieldSyncStatus'))$('fieldSyncStatus').textContent=x;if($('fieldSyncBar'))$('fieldSyncBar').dataset.state=x.startsWith('Google verificado')?'connected':x.includes('Erro')||x.includes('conflito')||x.includes('bloqueada')?'error':'offline'};
-function snapshot(){
- const data={at:new Date().toISOString(),device,keys:{}};
- for(const key of KEYS)data.keys[key]=localStorage.getItem(key);
- const existing=localStorage.getItem(BACKUP);
- if(!existing)nativeSet.call(localStorage,BACKUP,JSON.stringify(data));
-}
-function validate(){
- for(const key of KEYS){const records=read(key),ids=new Set();for(const x of records){const id=idOf(x);if(ids.has(id))throw Error('ID duplicado em '+key+': '+id);ids.add(id)}}
-}
-function mark(key){
- if(quiet||!KEYS.includes(key))return;
- let list;try{list=read(key)}catch(e){status('Erro local · sincronização bloqueada');console.error(e);return}
- const now=Date.now();
- for(const x of list){
-  const id=idOf(x),k=kOf(key,id),h=hash(x);
-  if(meta.known[k]!==h){const old=meta.pending[k];if(!old||hash(old.data)!==h)meta.pending[k]={key,id,data:x,at:now,op:crypto.randomUUID(),base:meta.known[k]??null}}
- }
- // Absence is NOT a deletion. Never manufacture tombstones.
- persist();if(token){clearTimeout(timer);timer=setTimeout(sync,2000)}
-}
-Storage.prototype.setItem=function(key,value){const result=nativeSet.call(this,key,value);if(this===localStorage)mark(key);return result};
-function boot(){
- if($('fieldSyncBar'))return;
- const bar=document.createElement('div');bar.id='fieldSyncBar';
- bar.innerHTML='<span id="fieldSyncStatus">Google desligado · dados locais</span><button id="fieldSyncConnect" type="button">Ligar Google</button><button id="fieldSyncNow" type="button">Sincronizar</button><button id="fieldSyncExport" type="button">Backup</button>';
- (document.querySelector('.topbar-right')||document.body).appendChild(bar);
- $('fieldSyncConnect').onclick=connect;$('fieldSyncNow').onclick=()=>token?sync():connect();
- $('fieldSyncExport').onclick=()=>{
-  try{const payload={version:2,at:new Date().toISOString(),data:{},meta};
-   for(const key of KEYS)payload.data[key]=read(key);
-   const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
-   a.href=url;a.download='field-evaluation-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
-  }catch(e){status('Erro ao criar backup');console.error(e)}
- };
- try{snapshot();validate();KEYS.forEach(mark)}catch(e){status('Erro local · sincronização bloqueada');console.error(e);meta.blocked=true;persist()}
-}
-function connect(){
- if(meta.blocked){status('Erro local · sincronização bloqueada');return}
- if(!navigator.onLine){status('Offline · dados locais');return}
- if(!window.google?.accounts?.oauth2){status('Google indisponível · tenta novamente');return}
- if(!client)client=google.accounts.oauth2.initTokenClient({client_id:CLIENT,scope:'https://www.googleapis.com/auth/spreadsheets',error_callback:e=>{console.error(e);status('Erro de autorização Google')},callback:r=>{if(r.error||!r.access_token){status('Autorização Google recusada');return}token=r.access_token;sync()}});
- try{status('A abrir autorização Google…');client.requestAccessToken({prompt:'select_account'})}catch(e){console.error(e);status('Erro de autorização Google')}
-}
-async function api(range,method='GET',body=null,suffix=''){
- const url='https://sheets.googleapis.com/v4/spreadsheets/'+BOOK+'/values/'+encodeURIComponent(range)+suffix;
- const r=await fetch(url,{method,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
- if(r.status===401)token='';
- if(!r.ok)throw Error('Google Sheets '+r.status);
- return r.json();
-}
-function cloudRows(values){
- const all=new Map();
- for(const line of values||[]){
-  const [key,id,at,del,json,dev,version]=line;
-  if(!KEYS.includes(key)||!id)continue;
-  let data=null;try{if(json)data=JSON.parse(json)}catch{continue}
-  const k=kOf(key,id);if(!all.has(k))all.set(k,[]);
-  all.get(k).push({key,id,ts:Date.parse(at)||0,deleted:String(del).toUpperCase()==='TRUE',data,dev:String(dev||''),version:String(version||'')});
- }
- return all;
-}
-function latest(list){return [...list].sort((a,b)=>a.ts-b.ts||a.dev.localeCompare(b.dev)).at(-1)}
-async function sync(){
- if(!token||!navigator.onLine||meta.blocked){status('Offline ou Google desligado · dados locais');return}
- if(busy)return;
- busy=true;status('A sincronizar…');
- try{
-  validate();snapshot();
-  const cloud=cloudRows((await api('Records!A2:G100000')).values);
-  const upload=[],adopt=new Map(),conflicts={...meta.conflicts};
-  for(const key of KEYS){
-   const local=new Map(read(key).map(x=>[idOf(x),x]));
-   for(const [k,list] of cloud){
-    const remote=latest(list);if(remote.key!==key)continue;
-    const lh=local.has(remote.id)?hash(local.get(remote.id)):null,rh=remote.deleted?null:hash(remote.data);
-    const pending=meta.pending[k];
-    if(remote.deleted){if(lh!==null)conflicts[k]={reason:'remote-delete',local:local.get(remote.id),remote};continue}
-    if(pending){
-     if(lh===rh){delete meta.pending[k];meta.known[k]=rh;delete conflicts[k];continue}
-     if(pending.base!==null&&pending.base!==rh){conflicts[k]={reason:'concurrent-edit',local:local.get(remote.id),remote};continue}
-     if(pending.base===null){conflicts[k]={reason:'unknown-remote',local:local.get(remote.id),remote};continue}
-     upload.push(pending);continue;
-    }
-    if(lh===null){adopt.set(k,remote);continue}
-    if(lh===rh){meta.known[k]=rh;delete conflicts[k];continue}
-    if(meta.known[k]===lh){adopt.set(k,remote);continue}
-    conflicts[k]={reason:'divergent-local',local:local.get(remote.id),remote};
-   }
-  }
-  for(const [k,p] of Object.entries(meta.pending)){
-   if(conflicts[k])continue;
-   if(!cloud.has(k))upload.push(p);
-  }
-  // Never overwrite a remote record with a competing local edit.
-  const unique=[...new Map(upload.map(p=>[kOf(p.key,p.id),p])).values()];
-  if(unique.length){
-   const values=unique.map(p=>[p.key,p.id,new Date(p.at).toISOString(),'FALSE',JSON.stringify(p.data),device,'2:'+p.op]);
-   await api('Records!A:G','POST',{values},':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS');
-   const verify=cloudRows((await api('Records!A2:G100000')).values);
-   for(const p of unique){
-    const k=kOf(p.key,p.id),h=hash(p.data),v=verify.get(k)||[];
-    const found=v.some(x=>x.dev===device&&x.version==='2:'+p.op&&!x.deleted&&hash(x.data)===h);
-    if(!found){conflicts[k]={reason:'upload-unverified',local:p.data};continue}
-    const remote=latest(v);
-    if(remote.deleted||hash(remote.data)!==h){conflicts[k]={reason:'post-upload-divergence',local:p.data,remote};continue}
-    if(meta.pending[k]?.op===p.op){delete meta.pending[k];meta.known[k]=h;delete conflicts[k]}
-   }
-  }
-  quiet=true;let changed=false;
-  try{
-   for(const key of KEYS){
-    const local=read(key),map=new Map(local.map(x=>[idOf(x),x]));let keyChanged=false;
-    for(const [k,remote] of adopt){
-     if(remote.key!==key||conflicts[k]||meta.pending[k])continue;
-     const lh=map.has(remote.id)?hash(map.get(remote.id)):null;
-     if(lh!==null&&meta.known[k]!==lh)continue;
-     map.set(remote.id,remote.data);meta.known[k]=hash(remote.data);keyChanged=true;
-    }
-    if(keyChanged){nativeSet.call(localStorage,key,JSON.stringify([...map.values()]));changed=true}
-   }
-  }finally{quiet=false}
-  meta.conflicts=conflicts;persist();
-  lastSync=Date.now();const count=Object.keys(conflicts).length;
-  status(count?'Google: '+count+' conflito(s) · dados preservados':'Google verificado · '+new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}));
-  if(changed)setTimeout(()=>location.reload(),600);
- }catch(e){console.error('Field sync',e);status('Erro de sincronização · dados locais preservados')}
- finally{busy=false}
-}
-window.addEventListener('online',()=>{if(token)sync()});
-window.addEventListener('offline',()=>status('Offline · dados locais'));
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&token)sync()});
-setInterval(()=>{if(token&&navigator.onLine&&Date.now()-lastSync>120000)sync()},120000);
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-})();
-</script>
+
 <script>
 /* Physical registration dropdowns: original form elements retain IDs and listeners. */
 (function(){

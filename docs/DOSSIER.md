@@ -81,3 +81,13 @@ Em cada entrega: data, versão, issue Linear, baseline SHA, commit/PR, alteraç�
 - Testes sintéticos isolados PASS: bootstrap, cloud-only, local-only, conflito e igualdade. Sintaxe 5 scripts PASS.
 - **Bloqueadores SAFE:** sem testes Google reais, dois dispositivos, offline PWA, restore, conflitos resolvidos pela interface, eliminações explícitas propagadas. App publicada permanece v38.58; sem alterações aos dados reais.
 - Dossier técnico completo: `docs/SYNC_IMPLEMENTATION_TUG-66.md`. Bug log: falhas S1/S2 mitigadas na branch; restantes riscos abertos e não declarados resolvidos em produção.
+
+## 26-11-2026 — v38.59 TUG-66 — publicação de teste autorizada
+- Base publicada: `20b8b5f84d5176a51abef656418ca8d3f0c991b4` (v38.58); continuação da branch `feature/tug-66-sync-safety-v38-59`, PR #5.
+- Sync v3: operações causais append-only com operation ID e pais; sem decisão por relógio local, sem deleções por ausência, conflitos explícitos, read-back e retries idempotentes. Histórico legacy divergente exige revisão. IDs inválidos/duplicados e linhas remotas inválidas bloqueiam sync sem descartar dados.
+- Delete confirmado em Physical/Shooting/Notes/Registry/Chevrons gera tombstone. Importações e dispositivos vazios não geram eliminações. Na primeira ligação, versões remotas ausentes localmente exigem revisão; não se recuperam automaticamente registos anteriormente apagados.
+- Interface Rever com escolha explícita de versão e arquivo local da versão anterior; Backup e Recuperar fazem merge, preservam divergências e protegem eliminações conhecidas. Janelas desatualizadas pedem recarregamento antes de guardar.
+- SW: cache v38-59, apenas HTTP OK; fallback HTML apenas em navegação; ativação limpa apenas caches Field Evaluation App e preserva outras apps.
+- QA: testes Chromium headless com sessões isoladas e API Sheets/OAuth simulados; ver `QA_v38_59.md` e `tests/sync-v38-59.cjs`. Não foram feitas chamadas à folha real nem restaurados os dois registos apagados pelo utilizador.
+- Estado: release para TESTE autorizada explicitamente em 26-11-2026; **não SAFE**, porque OAuth/Sheets reais, Android/tablet físicos e regressão funcional integral permanecem NOT RUN. Aceitação do proprietário pendente. Merge/deploy e SHA final registados no Linear.
+- Bug log: corrigidos os riscos de ausência→delete, descarte de pending, relógio como árbitro, read-back ausente, conflitos sem UI e cache transversal. Risco residual: clientes antigos ainda podem escrever protocolo legacy; v3 preserva esses desvios para revisão. Não reverter para v38.58 sem backup, porque clientes antigos não compreendem causalidade v3.
