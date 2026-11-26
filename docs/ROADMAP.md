@@ -118,3 +118,11 @@ v38.60 PUBLISHED/TESTED (sintético), PR #6, merge `c68278cdcfc63f7cce168a632ec7
 
 ## Publicação v38.61 confirmada
 PR #7, merge 1bd831ecb53dec32e4d842b3e40dba9c3a59ad39. Index/SW HTTP200 com SHA256 igual aos bytes testados. Smoke Chromium na URL final: aviso contido na célula abaixo do nome, link abre Progresso Individual, zero pageerror. 43 testes locais PASS; aceitação/Android físico pendentes, não SAFE integral.
+
+## 26-11-2026 — v38.62 TUG-69 — fecho com isenções e TOP junto ao nome
+- Base 03bd0dd7655dc4d1f74992e8bd3bacca33654bbd (v38.61). Pedido do proprietário: fechar avaliações com exercício isento e manter TOP ao lado do nome.
+- exerciseExcluded continua a guardar a disposição explícita por avaliação. Todos os exercícios com resultado válido (zero guardado incluído) ou isenção => Complete; com isenções => Complete (Exempt) / EXEMPT, mesmo quando os quatro estão isentos. Campos em falta continuam pendentes e manualIncomplete é respeitado. Checkbox na estação e no editor de notas; cancelar não guarda. Remover isenção reabre exercício sem resultado ou recupera cálculo do resultado que já existia. Resultados/notas não são apagados ao assinalar isenção; pontos de exercícios não afetados são preservados.
+- Fecho não é PASS: os mínimos Combat/Non-Combat mantêm-se. Subtotal de exercícios realizados não é escalado para /400; isenções ficam fora dos rankings, médias e PASS/NOT PASS de quatro exercícios. Relatórios, filtros e progresso usam EXEMPT para distinguir registo fechado de pendência. Rótulo antigo NOT ASSESSED é apresentado conforme novo fluxo sem restauração global/migração de dados.
+- Bug adicional corrigido: corrida 00:00 gravada na estação podia obter pontos de topo; agora vale 0 e conta como resultado registado. Zero não representa recorde de tempo de corrida. Corrigidas referências a refresh indisponível nos caminhos de fecho/estação testados.
+- Layout: linha flex sem quebra para nome + TOP1/2/3 + estrela, seguida do aviso de restrição. Sem sobreposição e sem colocar TOP depois do aviso.
+- SOP2.3 e SAFE2.2 atualizados com a nova distinção entre conclusão e classificação. QA_v38_62.md documenta testes e gates. Não foram tocados dados reais. Publicação de teste autorizada; SAFE físico/Google live/aceitação pendentes.
