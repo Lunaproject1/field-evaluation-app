@@ -115,3 +115,6 @@ v38.60 PUBLISHED/TESTED (sintético), PR #6, merge `c68278cdcfc63f7cce168a632ec7
 - Base `262f976d7699a3f7700e48b53625e5f4343059c4`. Apenas CSS e versão/cache v38.61; scripts da app byte-idênticos após substituir a versão. Sem alterações aos dados, sync ou scoring.
 - QA: 16 cenários da função/layout + 27 sync/PWA PASS. Geometria DOM: nome longo, quatro exercícios, 390/768/1366px e zoom 100/150%; aviso abaixo do nome, contido na célula e sem interseção com a coluna seguinte; link clicável PASS. Ver QA_v38_61.md.
 - Estado: TESTED sintético; publicação de teste autorizada pelo pedido. Aceitação e Android físico pendentes; não SAFE integral. PR/commit/deploy final no Linear TUG-68. Sem dados reais nos testes.
+
+## Publicação v38.61 confirmada
+PR #7, merge 1bd831ecb53dec32e4d842b3e40dba9c3a59ad39. Index/SW HTTP200 com SHA256 igual aos bytes testados. Smoke Chromium na URL final: aviso contido na célula abaixo do nome, link abre Progresso Individual, zero pageerror. 43 testes locais PASS; aceitação/Android físico pendentes, não SAFE integral.
