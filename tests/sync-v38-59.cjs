@@ -1,8 +1,9 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
+const VERSION=process.env.FIELD_VERSION||'v38.59',CACHE='field-eval-'+VERSION.replaceAll('.','-');
 let swVariant=false;
-const server=require('node:http').createServer((req,res)=>{const path=require('node:path').join(__dirname,'..',req.url==='/'?'index.html':req.url.split('?')[0]);try{res.setHeader('Content-Type',path.endsWith('.js')?'text/javascript':path.endsWith('.html')?'text/html':path.endsWith('.webmanifest')?'application/manifest+json':'image/svg+xml');res.end(path.endsWith('sw.js')&&swVariant?fs.readFileSync(path,'utf8').replaceAll('field-eval-v38-59','field-eval-v38-58-synthetic'):fs.readFileSync(path))}catch{res.statusCode=404;res.end('missing')}});
+const server=require('node:http').createServer((req,res)=>{const path=require('node:path').join(__dirname,'..',req.url==='/'?'index.html':req.url.split('?')[0]);try{res.setHeader('Content-Type',path.endsWith('.js')?'text/javascript':path.endsWith('.html')?'text/html':path.endsWith('.webmanifest')?'application/manifest+json':'image/svg+xml');res.end(path.endsWith('sw.js')&&swVariant?fs.readFileSync(path,'utf8').replaceAll(CACHE,'field-eval-v38-58-synthetic'):fs.readFileSync(path))}catch{res.statusCode=404;res.end('missing')}});
 const URL='http://127.0.0.1:8765/';
 const KEY='fieldapp.physical.records',META='fieldapp.sync.v3.meta';
 const key=id=>JSON.stringify([KEY,id]);
@@ -84,12 +85,12 @@ await test('cross-tab writes require reload rather than overwrite newer data',as
 await test('navigation Physical Shooting Notes Language and mobile viewport',async()=>{
  const s=await make([]);await s.page.setViewportSize({width:390,height:844});
  for(const mod of ['Shooting','Notes','Language','Physical']){if(['Notes','Language'].includes(mod))await s.page.evaluate(mod=>switchModule(mod.toLowerCase()),mod);else await s.page.click('#tab'+mod);assert.equal(await s.page.locator('#'+mod.toLowerCase()+'Module').evaluate(el=>!el.classList.contains('module-hidden')),true)}
- assert.deepEqual(s.errors,[]);assert.equal(await s.page.locator('#appVersionDisplay').textContent(),'v38.59');
+ assert.deepEqual(s.errors,[]);assert.equal(await s.page.locator('#appVersionDisplay').textContent(),VERSION);
 });
 await test('PWA installation, offline reload, offline persistence and cache isolation',async()=>{
  swVariant=true;const context=await browser.newContext({serviceWorkers:'allow'});const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await context.route('https://**/*',r=>r.abort());await page.goto(URL);await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
- await page.evaluate(async()=>{const c=await caches.open('other-app-synthetic');await c.put('/other-app',new Response('preserve'))});swVariant=false;await page.evaluate(async()=>{const reg=await navigator.serviceWorker.getRegistration();await reg.update()});await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('field-eval-v38-59')&&!keys.includes('field-eval-v38-58-synthetic')});
- const cached=await page.evaluate(async()=>{const c=await caches.open('other-app-synthetic');await c.put('/other-app',new Response('preserve'));return (await caches.keys()).includes('field-eval-v38-59')});assert.equal(cached,true);
+ await page.evaluate(async()=>{const c=await caches.open('other-app-synthetic');await c.put('/other-app',new Response('preserve'))});swVariant=false;await page.evaluate(async()=>{const reg=await navigator.serviceWorker.getRegistration();await reg.update()});await page.waitForFunction(async cache=>{const keys=await caches.keys();return keys.includes(cache)&&!keys.includes('field-eval-v38-58-synthetic')},CACHE);
+ const cached=await page.evaluate(async cache=>{const c=await caches.open('other-app-synthetic');await c.put('/other-app',new Response('preserve'));return (await caches.keys()).includes(cache)},CACHE);assert.equal(cached,true);
  await page.evaluate(({KEY})=>localStorage.setItem(KEY,JSON.stringify([{id:'offline',callsign:'SYNTHETIC'}])),{KEY});await context.setOffline(true);await page.reload();await page.waitForSelector('#fieldSyncBar');assert.equal((await page.evaluate(({KEY})=>JSON.parse(localStorage.getItem(KEY))[0].id,{KEY})),'offline');await page.click('#tabShooting');await page.click('#tabPhysical');assert.deepEqual(errors,[]);assert.ok((await page.evaluate(()=>caches.keys())).includes('other-app-synthetic'));await context.close();
 });
 
