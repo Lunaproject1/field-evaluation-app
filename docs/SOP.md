@@ -1,5 +1,5 @@
-# FIELD EVALUATION APP — SOP OFICIAL v2.2
-**Atualizado em 23-11-2026 para integração obrigatória no ecossistema LUNA.** Substitui os procedimentos antigos eliminados pelo proprietário. Governa o processo de desenvolvimento; não certifica retroativamente versões da aplicação.
+# FIELD EVALUATION APP — SOP OFICIAL v2.3
+**Atualizado em 26-11-2026: fecho de avaliações com isenções (TUG-69).** Substitui os procedimentos antigos eliminados pelo proprietário. Governa o processo de desenvolvimento; não certifica retroativamente versões da aplicação.
 
 ## 1. Governação e fontes
 - **GitHub:** `Lunaproject1/field-evaluation-app`, código-fonte e documentação versionada. Branch `main` é a referência publicada; usar branch de trabalho e PR para alterações futuras sempre que possível.
@@ -38,7 +38,7 @@
 8. **Continuidade:** atualizar Linear (issue, bug log, roadmap e checkpoint) e os documentos GitHub pertinentes após cada alteração.
 
 ## 4. Normas de dados e avaliação
-- Distinguir Combat, Non-Combat, PASS, NOT PASS, NOT ASSESSED e avaliações pendentes.
+- Distinguir conclusão do registo de classificação: quatro resultados registados (zero incluído) ou isenções explícitas fecham o registo. Com isenções: Complete (Exempt) / EXEMPT. Campos realmente vazios continuam pendentes; manualIncomplete é respeitado. Não converter isenções em PASS, ranking ou média de quatro exercícios. Preservar os valores/notas existentes ao marcar uma isenção.
 - Combat: PASS exige total >=330 e >=60 em cada exercício aplicável; Non-Combat: total >=280 e >=50 em cada exercício aplicável. Confirmar contra o código antes de mudar lógica.
 - Preservar resultados brutos (repetições, tempo, peso), pontos, data, escalão e standards; não atribuir causalidade a variações de pontos quando escalão/regras mudaram.
 - Estatísticas devem indicar amostra, datas e exclusões. Não classificar peso como positivo/negativo por si só.

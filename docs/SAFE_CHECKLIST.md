@@ -1,4 +1,4 @@
-# FIELD EVALUATION APP — SAFE CHECKLIST OFICIAL v2.1
+# FIELD EVALUATION APP — SAFE CHECKLIST OFICIAL v2.2
 **Nova checklist do projeto, 23-11-2026.** Substitui a checklist antiga eliminada. Cada item deve ser marcado **PASS / FAIL / NOT RUN / N/A** com evidência e justificação. Uma release só é **SAFE** se os gates aplicáveis passarem; testes não realizados não podem ser declarados aprovados.
 
 ## A. Fonte e âmbito
@@ -25,8 +25,8 @@
 
 ## D. Regras de avaliação
 - [ ] Combat PASS >=330 total e >=60 por exercício; abaixo de qualquer mínimo = NOT PASS.
-- [ ] Non-Combat PASS >=280 total e >=50 por exercício; exclusões = NOT ASSESSED quando aplicável.
-- [ ] Registos incompletos e ajustados não entram indevidamente em médias, classificações ou comparações.
+- [ ] Non-Combat PASS >=280 total e >=50 por exercício; isenções explícitas permitem fechar como Complete (Exempt) / EXEMPT sem atribuir PASS.
+- [ ] Campos em falta mantêm registo pendente; zero/00:00 guardados contam como exercício finalizado com 0 pontos. Isenções parciais/totais podem fechar o registo, mas ficam fora de ranking e médias de quatro exercícios. Testar retirada da isenção e preservação de resultados/notas.
 - [ ] Classificação, cor e labels consistentes no dashboard, relatório, Quick Brief e imagem.
 - [ ] Mudança de standard/escalão não é apresentada como evolução física direta.
 
