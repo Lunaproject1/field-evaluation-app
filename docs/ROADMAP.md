@@ -108,3 +108,10 @@ ID | Versão | Ambiente | Passos | Esperado | Observado | Severidade | Impacto |
 
 ## Publicação confirmada — 26-11-2026
 v38.60 PUBLISHED/TESTED (sintético), PR #6, merge `c68278cdcfc63f7cce168a632ec7c2a64a103757`, implementação `e5433e9d51e6ed888ddad3effcc462ec0b722a01`. Index e SW servidos com HTTP 200 e SHA-256 igual aos ficheiros testados. Smoke Chromium na URL final: versão v38.60, Physical/Shooting e zero pageerror. Total 42 cenários locais PASS. Não SAFE; Google live, Android físico e aceitação pendentes. Linear TUG-67 e dossier atualizados. Sem alterações aos registos reais.
+
+## 26-11-2026 — v38.61 TUG-68 — correção de sobreposição
+- Bug v38.60 confirmado pelo proprietário: aviso inline ao lado do nome ultrapassava a célula e sobrepunha a coluna seguinte.
+- CSS corrigido: aviso em bloco por baixo do nome, box-sizing border-box, largura 180px limitada à célula e quebra de palavras; altura da linha acompanha o conteúdo. Link para Progresso Individual preservado.
+- Base `262f976d7699a3f7700e48b53625e5f4343059c4`. Apenas CSS e versão/cache v38.61; scripts da app byte-idênticos após substituir a versão. Sem alterações aos dados, sync ou scoring.
+- QA: 16 cenários da função/layout + 27 sync/PWA PASS. Geometria DOM: nome longo, quatro exercícios, 390/768/1366px e zoom 100/150%; aviso abaixo do nome, contido na célula e sem interseção com a coluna seguinte; link clicável PASS. Ver QA_v38_61.md.
+- Estado: TESTED sintético; publicação de teste autorizada pelo pedido. Aceitação e Android físico pendentes; não SAFE integral. PR/commit/deploy final no Linear TUG-68. Sem dados reais nos testes.
