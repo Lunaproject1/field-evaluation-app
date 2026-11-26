@@ -105,3 +105,6 @@ ID | Versão | Ambiente | Passos | Esperado | Observado | Severidade | Impacto |
 - Não há campo de diagnóstico, fotografia, anexo ou relatório clínico. Trata-se de uma marcação funcional de exercícios. Identidades existentes podem exigir revisão se os próprios IDs de origem estiverem incorretos; não foi feita deduplicação ou associação de dados reais.
 - QA e limitações: ver `QA_v38_60.md`; publicação de teste autorizada pelo pedido. Google live, Android/tablet físicos, auditoria de todos os exportadores e SAFE integral continuam pendentes. Aceitação do utilizador separada.
 - Bug log (corrigidos durante desenvolvimento): badge cortado na célula Shooting, refresh local após remover marcação, perda de metadados ao recomputar/duplicar avaliação. Testes de regressão respetivos PASS. Sem novo bug crítico aberto nesta entrega.
+
+## Publicação confirmada — 26-11-2026
+v38.60 PUBLISHED/TESTED (sintético), PR #6, merge `c68278cdcfc63f7cce168a632ec7c2a64a103757`, implementação `e5433e9d51e6ed888ddad3effcc462ec0b722a01`. Index e SW servidos com HTTP 200 e SHA-256 igual aos ficheiros testados. Smoke Chromium na URL final: versão v38.60, Physical/Shooting e zero pageerror. Total 42 cenários locais PASS. Não SAFE; Google live, Android físico e aceitação pendentes. Linear TUG-67 e dossier atualizados. Sem alterações aos registos reais.
