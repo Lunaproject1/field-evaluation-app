@@ -126,3 +126,6 @@ PR #7, merge 1bd831ecb53dec32e4d842b3e40dba9c3a59ad39. Index/SW HTTP200 com SHA2
 - Bug adicional corrigido: corrida 00:00 gravada na estação podia obter pontos de topo; agora vale 0 e conta como resultado registado. Zero não representa recorde de tempo de corrida. Corrigidas referências a refresh indisponível nos caminhos de fecho/estação testados.
 - Layout: linha flex sem quebra para nome + TOP1/2/3 + estrela, seguida do aviso de restrição. Sem sobreposição e sem colocar TOP depois do aviso.
 - SOP2.3 e SAFE2.2 atualizados com a nova distinção entre conclusão e classificação. QA_v38_62.md documenta testes e gates. Não foram tocados dados reais. Publicação de teste autorizada; SAFE físico/Google live/aceitação pendentes.
+
+## Publicação v38.62 confirmada
+PR #8, merge 9aeafffc79576254c61b206379d9db2df2e56428; implementação601d82f2e526abbeaa350f3639aa7e8840f47e45. Index/SW publicados HTTP200 com SHA256 igual aos bytes testados. Smoke Chromium live: v38.62, registo legado com isenção mostra Complete (Exempt)/EXEMPT, checkbox correto, zero pageerror. 58 testes locais PASS; Android físico/Google live e aceitação pendentes, não SAFE integral.
